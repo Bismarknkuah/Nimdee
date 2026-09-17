@@ -28,6 +28,53 @@ export class PublicController {
     return this.schools.resolveHost(host);
   }
 
+  /**
+   * Demo accounts for the "Quick demo access" buttons on the login pages.
+   * Only returned when the seeded demo school exists and DEMO_MODE is not set to "false".
+   */
+  @Get('demo-accounts')
+  async demoAccounts() {
+    if (process.env.DEMO_MODE === 'false') return { enabled: false };
+    const tenant = await this.prisma.platform.tenant.findUnique({
+      where: { slug: 'brightfuture' },
+      select: { id: true, slug: true, name: true, code: true, status: true },
+    });
+    if (!tenant || tenant.status !== 'ACTIVE') return { enabled: false };
+    const emails = [
+      ['admin@brightfuture.edu.gh', 'School administrator', 'admin'],
+      ['principal@brightfuture.edu.gh', 'Principal', 'admin'],
+      ['teacher@brightfuture.edu.gh', 'Class teacher', 'teacher'],
+      ['teacher2@brightfuture.edu.gh', 'Subject teacher', 'teacher'],
+      ['accounts@brightfuture.edu.gh', 'Accountant', 'finance'],
+      ['canteen@brightfuture.edu.gh', 'Canteen manager', 'canteen'],
+      ['nurse@brightfuture.edu.gh', 'School nurse', 'staff'],
+      ['librarian@brightfuture.edu.gh', 'Librarian', 'staff'],
+      ['hr@brightfuture.edu.gh', 'HR officer', 'staff'],
+      ['parent@brightfuture.edu.gh', 'Parent (2 children)', 'parent'],
+      ['student@brightfuture.edu.gh', 'Student', 'student'],
+    ] as const;
+    const existing = await this.prisma.platform.user.findMany({
+      where: { tenantId: tenant.id, email: { in: emails.map((e) => e[0]) }, isActive: true },
+      select: { email: true, firstName: true, lastName: true },
+    });
+    const platformOwner = await this.prisma.platform.platformUser.findFirst({
+      where: { email: 'admin@schoolos.app', isActive: true },
+      select: { email: true },
+    });
+    return {
+      enabled: true,
+      school: { slug: tenant.slug, name: tenant.name, code: tenant.code },
+      password: 'Password123!',
+      accounts: emails
+        .filter(([email]) => existing.some((u) => u.email === email))
+        .map(([email, label, kind]) => {
+          const u = existing.find((x) => x.email === email)!;
+          return { email, label, kind, name: `${u.firstName} ${u.lastName}` };
+        }),
+      platform: platformOwner ? { email: platformOwner.email, label: 'Platform owner' } : null,
+    };
+  }
+
   @Get('plans')
   plans() {
     return this.prisma.platform.plan.findMany({

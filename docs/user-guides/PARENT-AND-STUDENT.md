@@ -2,6 +2,8 @@
 
 ## Signing in
 
+On a demo deployment the login page shows *Quick demo access* buttons — pick *Parent* or *Student* to explore without a password.
+
 Use the email the school registered and the temporary password they gave you; you will be asked to change it. Parents see all their children; students see themselves.
 
 ## Parent home

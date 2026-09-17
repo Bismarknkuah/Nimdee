@@ -11,14 +11,14 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 30, ttl: 60_000 } }) // many users share one school IP (NAT), so per-IP limits stay generous
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.auth.login(dto);
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: 30, ttl: 60_000 } }) // many users share one school IP (NAT), so per-IP limits stay generous
   @Post('platform/login')
   platformLogin(@Body() dto: PlatformLoginDto) {
     return this.auth.platformLogin(dto);

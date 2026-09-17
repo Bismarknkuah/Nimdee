@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { Button, Field, Input, useToast } from '@/components/ui';
+import { api } from '@/lib/api';
 
 export default function PlatformLogin() {
   const { platformLogin, me, loading } = useAuth();
@@ -11,6 +12,24 @@ export default function PlatformLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [demo, setDemo] = useState<any>(null);
+  useEffect(() => {
+    api.public
+      .get('/public/demo-accounts')
+      .then((d) => d?.enabled && d.platform && setDemo(d))
+      .catch(() => undefined);
+  }, []);
+  const demoLogin = async () => {
+    setBusy(true);
+    try {
+      await platformLogin(demo.platform.email, demo.password);
+      router.replace('/platform');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
   useEffect(() => {
     if (!loading && me?.type === 'PLATFORM') router.replace('/platform');
   }, [me, loading, router]);
@@ -44,6 +63,19 @@ export default function PlatformLogin() {
           <Button type="submit" className="w-full" loading={busy}>
             Sign in
           </Button>
+          {demo && (
+            <button
+              type="button"
+              onClick={demoLogin}
+              disabled={busy}
+              className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-left text-sm hover:bg-brand-soft disabled:opacity-50"
+            >
+              <span className="block font-medium text-slate-900">Quick demo access — Platform owner</span>
+              <span className="block text-xs text-slate-500">
+                {demo.platform.email} · password {demo.password}
+              </span>
+            </button>
+          )}
         </form>
       </div>
     </div>

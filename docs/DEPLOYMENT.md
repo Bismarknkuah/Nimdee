@@ -11,6 +11,7 @@
    * `CORS_ORIGINS=https://yourdomain.com,https://*.yourdomain.com,https://*.vercel.app`.
    * `PLATFORM_ADMIN_EMAIL`, `PLATFORM_ADMIN_PASSWORD` — the first platform owner (created on boot if missing).
    * Optional integrations: `PAYSTACK_SECRET_KEY`, `SMS_PROVIDER=ARKESEL` + `SMS_API_KEY` + `SMS_SENDER_ID`, `EMAIL_PROVIDER=SMTP` + `SMTP_HOST/PORT/USER/PASS/FROM`, `PLATFORM_AUTO_APPROVE=true` to skip manual school approval, `PLATFORM_BANK_DETAILS`.
+   * `DEMO_MODE=false` hides the *Quick demo access* buttons on the login pages once you go live (they only appear while the seeded demo school exists).
    * **Never** set `PRISMA_ENGINE=wasm` in production.
 4. **Networking** → *Generate domain* (or attach `api.yourdomain.com`). Health check path: `/health`.
 5. **Demo data** (optional): `railway run npm run seed` inside `api/`, or run the seed locally against the Railway `DATABASE_URL`.

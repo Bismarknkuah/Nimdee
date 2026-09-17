@@ -10,7 +10,7 @@ A production-grade SaaS platform for schools: one codebase, many schools, each f
 
 ## What is implemented
 
-Everything below is working end-to-end and exercised by **222 automated API checks** (`api/scripts/smoke.js`) plus **26 unit tests** (`npm test`). The frontend type-checks and builds (66 pages).
+Everything below is working end-to-end and exercised by **233 automated API checks** (`api/scripts/smoke.js`) plus **26 unit tests** (`npm test`). The frontend type-checks and builds (66 pages).
 
 **Platform console** — school registry and approval workflow, plans and feature flags, subscription invoices and upgrades, feature overrides, audited support sessions, cross-school audit log, sync health, per-school **data export**.
 
@@ -78,17 +78,22 @@ npm install
 npm run dev                     # http://localhost:3000  (school portal also at http://brightfuture.localhost:3000)
 ```
 
-**Demo logins** (password for all: `Password123!`)
+**Demo logins** (password for all: `Password123!`). The login page shows **Quick demo access** buttons for every role below — one click signs you in (disable with `DEMO_MODE=false` on the API).
 
-| Role | Email |
-|---|---|
-| Platform owner | admin@schoolos.app → http://localhost:3000/platform/login |
-| School admin | admin@brightfuture.edu.gh |
-| Class teacher | teacher@brightfuture.edu.gh |
-| Subject teacher | teacher2@brightfuture.edu.gh |
-| Accountant | accounts@brightfuture.edu.gh |
-| Canteen manager | canteen@brightfuture.edu.gh |
-| Parent (2 children) | parent@brightfuture.edu.gh |
+| Role | Email | Lands on |
+|---|---|---|
+| Platform owner | admin@schoolos.app → `/platform/login` | Platform console |
+| School admin | admin@brightfuture.edu.gh | Administrator dashboard |
+| Principal | principal@brightfuture.edu.gh | Administrator dashboard (no user/role/backup management) |
+| Class teacher | teacher@brightfuture.edu.gh | Teacher dashboard |
+| Subject teacher | teacher2@brightfuture.edu.gh | Teacher dashboard |
+| Accountant | accounts@brightfuture.edu.gh | Finance dashboard |
+| Canteen manager | canteen@brightfuture.edu.gh | Canteen dashboard |
+| School nurse | nurse@brightfuture.edu.gh | Clinic |
+| Librarian | librarian@brightfuture.edu.gh | Library |
+| HR officer | hr@brightfuture.edu.gh | HR & payroll |
+| Parent (2 children) | parent@brightfuture.edu.gh | Parent portal |
+| Student | student@brightfuture.edu.gh | Student portal |
 
 Verification: `cd api && npm test` (unit) and `npm run smoke` (end-to-end against a running API).
 

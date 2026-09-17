@@ -1061,7 +1061,7 @@ const today = new Date().toISOString().slice(0, 10);
   section('Messaging');
   r = await call('GET', '/messages/contacts', { token: G });
   check('parent contacts = teachers + office', r.status === 200 && r.data.length >= 2, r.data);
-  const teacherContact = r.data.find((c) => c.userType === 'TEACHER');
+  const teacherContact = r.data.find((c) => c.name === 'Kwame Boateng') ?? r.data.find((c) => c.userType === 'TEACHER');
   r = await call('POST', '/messages/threads', {
     token: G,
     body: { participantIds: [teacherContact.id], body: 'Hello teacher, smoke test' },
@@ -1158,15 +1158,56 @@ const today = new Date().toISOString().slice(0, 10);
 
   section('Printable documents');
   for (const [name, path, tok] of [
-    ['invoice PDF', `/documents/invoices/${inv.id}.pdf`, F], ['statement PDF', `/documents/students/${p5Students[0].id}/statement.pdf`, F], ['class list PDF', `/documents/classes/${p5.id}/list.pdf`, A],
-    ['attendance register PDF', `/documents/classes/${p5.id}/register.pdf`, T], ['batch report cards PDF', `/documents/results/report-cards.pdf?termId=${term.id}&classId=${p5.id}`, A], ['transcript PDF', `/documents/students/${p5Students[0].id}/transcript.pdf`, A],
-    ['ID card sheet PDF', `/documents/students/id-cards.pdf?classId=${p5.id}`, A], ['payslip PDF (own)', `/documents/payroll/${runId}/payslips/${staff1.id}.pdf`, T], ['class timetable PDF', `/documents/timetable/class/${p5.id}.pdf`, A],
+    ['invoice PDF', `/documents/invoices/${inv.id}.pdf`, F],
+    ['statement PDF', `/documents/students/${p5Students[0].id}/statement.pdf`, F],
+    ['class list PDF', `/documents/classes/${p5.id}/list.pdf`, A],
+    ['attendance register PDF', `/documents/classes/${p5.id}/register.pdf`, T],
+    ['batch report cards PDF', `/documents/results/report-cards.pdf?termId=${term.id}&classId=${p5.id}`, A],
+    ['transcript PDF', `/documents/students/${p5Students[0].id}/transcript.pdf`, A],
+    ['ID card sheet PDF', `/documents/students/id-cards.pdf?classId=${p5.id}`, A],
+    ['payslip PDF (own)', `/documents/payroll/${runId}/payslips/${staff1.id}.pdf`, T],
+    ['class timetable PDF', `/documents/timetable/class/${p5.id}.pdf`, A],
   ]) {
     r = await call('GET', path, { token: tok, raw: true });
     check(name, r.status === 200 && r.ct.includes('pdf') && r.data.byteLength > 1000, `${r.status} ${r.ct}`);
   }
   r = await call('GET', `/documents/payroll/${runId}/payslips/${staff1.id}.pdf`, { token: C, raw: true });
   check("canteen manager cannot open a teacher's payslip", r.status === 403 || r.status === 404, r.status);
+
+  section('Demo accounts');
+  r = await call('GET', '/public/demo-accounts');
+  check(
+    'demo accounts listed for the login page',
+    r.status === 200 &&
+      r.data.enabled &&
+      r.data.accounts.length >= 11 &&
+      r.data.platform &&
+      r.data.school.slug === 'brightfuture',
+    r.data,
+  );
+  // Login is rate-limited to 10/min per IP, so only the new roles are exercised here (the others log in earlier in this suite).
+  const demoTokens = {};
+  for (const email of ['principal@', 'nurse@', 'librarian@', 'hr@', 'student@']) {
+    const l = await call('POST', '/auth/login', {
+      body: { school: 'brightfuture', email: `${email}brightfuture.edu.gh`, password: r.data.password },
+    });
+    check(`demo login works: ${email}brightfuture.edu.gh`, l.status === 201 && l.data.accessToken, l.data);
+    demoTokens[email] = l.data.accessToken;
+  }
+  r = await call('GET', '/portal/overview', { token: demoTokens['student@'] });
+  check(
+    'student portal linked to a student record',
+    r.status === 200 && r.data.children.length === 1 && r.data.children[0].studentId,
+    r.data,
+  );
+  r = await call('GET', '/health/summary', { token: demoTokens['nurse@'] });
+  check('nurse can open the clinic', r.status === 200, r.data);
+  r = await call('GET', '/hr/payroll', { token: demoTokens['hr@'] });
+  check('HR officer can open payroll', r.status === 200, r.data);
+  r = await call('GET', '/library/summary', { token: demoTokens['librarian@'] });
+  check('librarian can open the library', r.status === 200, r.data);
+  r = await call('GET', '/dashboard/school', { token: demoTokens['principal@'] });
+  check('principal sees the school dashboard', r.status === 200 && r.data.counts, r.data);
 
   // ─── Cross-tenant isolation ───
   section('Tenant isolation');

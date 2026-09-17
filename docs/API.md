@@ -37,7 +37,7 @@ All endpoints except **auth** (login/refresh) and **public** require `Authorizat
 | library | 10 |
 | events | 9 |
 | exports | 6 |
-| public | 7 |
+| public | 8 |
 | subscription | 2 |
 | messaging | 6 |
 | hr | 14 |
@@ -522,6 +522,7 @@ All endpoints except **auth** (login/refresh) and **public** require `Authorizat
 |---|---|---|
 | `GET` | `/public/site/{slug}` |  |
 | `GET` | `/public/resolve-host` |  |
+| `GET` | `/public/demo-accounts` |  |
 | `GET` | `/public/plans` |  |
 | `POST` | `/public/schools/register` |  |
 | `GET` | `/public/schools/{slug}/classes` |  |

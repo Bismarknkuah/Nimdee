@@ -5,6 +5,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { dashboardFor, useAuth } from '@/lib/auth';
 import { currentSlug, slugFromHost } from '@/lib/tenant';
 import { Button, Field, Input, useToast } from '@/components/ui';
+import { api } from '@/lib/api';
+import { Sparkles } from 'lucide-react';
 
 function LoginForm() {
   const { login, me, loading, role } = useAuth();
@@ -16,6 +18,13 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [demo, setDemo] = useState<any>(null);
+  useEffect(() => {
+    api.public
+      .get('/public/demo-accounts')
+      .then((d) => d?.enabled && setDemo(d))
+      .catch(() => undefined);
+  }, []);
   useEffect(() => {
     const fromHost = slugFromHost(window.location.host);
     const s = fromHost || currentSlug();
@@ -28,11 +37,10 @@ function LoginForm() {
     if (!loading && me?.type === 'TENANT') router.replace(params.get('next') || dashboardFor(role));
   }, [me, loading, role, router, params]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doLogin = async (slug: string, mail: string, pass: string) => {
     setBusy(true);
     try {
-      const m = await login(school.trim(), email.trim(), password);
+      const m = await login(slug.trim(), mail.trim(), pass);
       router.replace(
         params.get('next') ||
           dashboardFor(
@@ -54,6 +62,19 @@ function LoginForm() {
     } finally {
       setBusy(false);
     }
+  };
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    doLogin(school, email, password);
+  };
+  const tones: Record<string, string> = {
+    admin: 'border-brand/40 hover:bg-brand-soft',
+    teacher: 'border-emerald-200 hover:bg-emerald-50',
+    finance: 'border-amber-200 hover:bg-amber-50',
+    canteen: 'border-orange-200 hover:bg-orange-50',
+    staff: 'border-violet-200 hover:bg-violet-50',
+    parent: 'border-sky-200 hover:bg-sky-50',
+    student: 'border-pink-200 hover:bg-pink-50',
   };
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -81,6 +102,35 @@ function LoginForm() {
       <Button type="submit" className="w-full" loading={busy}>
         Sign in
       </Button>
+      {demo && (!locked || school === demo.school.slug) && (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
+            <Sparkles size={14} className="text-brand" /> Quick demo access — {demo.school.name}
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            One click signs you in as that user (password {demo.password}).
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            {demo.accounts.map((a: any) => (
+              <button
+                key={a.email}
+                type="button"
+                disabled={busy}
+                onClick={() => doLogin(demo.school.slug, a.email, demo.password)}
+                className={`rounded-lg border bg-white px-2 py-1.5 text-left text-xs transition disabled:opacity-50 ${tones[a.kind] ?? tones.staff}`}
+              >
+                <span className="block font-medium text-slate-900">{a.label}</span>
+                <span className="block truncate text-[11px] text-slate-500">{a.name}</span>
+              </button>
+            ))}
+          </div>
+          {demo.platform && (
+            <Link href="/platform/login?demo=1" className="mt-2 block text-xs text-brand hover:underline">
+              Platform owner console →
+            </Link>
+          )}
+        </div>
+      )}
     </form>
   );
 }

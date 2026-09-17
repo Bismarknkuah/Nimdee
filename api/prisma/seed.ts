@@ -3,9 +3,11 @@
  * Development seed: platform owner, plans and a fully populated demo school.
  *   npm run seed            (local)      → creates "Bright Future Academy" (slug: brightfuture)
  * Logins (all passwords: Password123!)
- *   platform: admin@schoolos.app          school admin: admin@brightfuture.edu.gh
- *   teacher:  teacher@brightfuture.edu.gh accountant:  accounts@brightfuture.edu.gh
- *   canteen:  canteen@brightfuture.edu.gh parent:      parent@brightfuture.edu.gh
+ *   platform:  admin@schoolos.app            school admin: admin@brightfuture.edu.gh   principal: principal@brightfuture.edu.gh
+ *   teacher:   teacher@brightfuture.edu.gh   teacher 2:    teacher2@brightfuture.edu.gh accountant: accounts@brightfuture.edu.gh
+ *   canteen:   canteen@brightfuture.edu.gh   parent:       parent@brightfuture.edu.gh   student:   student@brightfuture.edu.gh
+ *   nurse:     nurse@brightfuture.edu.gh     librarian:    librarian@brightfuture.edu.gh HR:       hr@brightfuture.edu.gh
+ * These are the accounts offered by the "Quick demo access" buttons on the login pages (GET /public/demo-accounts).
  */
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -133,6 +135,11 @@ async function main() {
       await user('accounts@brightfuture.edu.gh', 'Yaw', 'Asante', 'STAFF', 'Accountant', '+233241112255');
       await user('canteen@brightfuture.edu.gh', 'Efua', 'Darko', 'STAFF', 'Canteen Manager', '+233241112266');
       const parentUser = await user('parent@brightfuture.edu.gh', 'Kofi', 'Adjei', 'PARENT', 'Parent', '+233209876543');
+      await user('principal@brightfuture.edu.gh', 'Nana', 'Ofori', 'STAFF', 'Principal', '+233241112277');
+      await user('nurse@brightfuture.edu.gh', 'Adjoa', 'Kumi', 'STAFF', 'Nurse', '+233241112288');
+      await user('librarian@brightfuture.edu.gh', 'Kojo', 'Appiah', 'STAFF', 'Librarian', '+233241112299');
+      await user('hr@brightfuture.edu.gh', 'Esi', 'Tetteh', 'STAFF', 'HR Officer', '+233241112300');
+      const studentUser = await user('student@brightfuture.edu.gh', 'Abena', 'Mensah', 'STUDENT', 'Student');
 
       // ── Academic structure ──
       const year = await tx.academicYear.create({
@@ -404,6 +411,7 @@ async function main() {
       const p5 = classes[0],
         jhs1 = classes[2];
       const p5Students = allStudents.filter((st) => st.classId === p5.id);
+      await tx.student.update({ where: { id: p5Students[0].id }, data: { userId: studentUser.id } });
       const dayAgo = (n: number) => new Date(now.getTime() - n * 86400000);
 
       // Discipline

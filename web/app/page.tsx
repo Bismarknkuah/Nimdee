@@ -66,6 +66,9 @@ export default function Landing() {
           <Link href="/register" className="btn-primary px-5 py-3 text-base">
             Start free trial <ArrowRight size={18} />
           </Link>
+          <Link href="/login?demo=1" className="btn-secondary px-5 py-3 text-base">
+            Try the demo school
+          </Link>
           <Link href="/login" className="btn-secondary px-5 py-3 text-base">
             School sign in
           </Link>
