@@ -83,14 +83,17 @@ function ProfileTab() {
         <Field label="School name">
           <Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </Field>
-        <Field label="Type">
+        <Field label="Ownership" hint="This platform is built for KG/Primary/JHS basic schools — set the levels you teach under Rules engine">
           <Select
             value={f.type}
             onChange={(e) => setF({ ...f, type: e.target.value })}
-            options={['BASIC', 'SECONDARY', 'INTERNATIONAL', 'TERTIARY', 'MIXED'].map((t) => ({
-              value: t,
-              label: title(t),
-            }))}
+            options={[
+              { value: 'BASIC', label: 'Public / Government' },
+              { value: 'PRIVATE', label: 'Private' },
+              { value: 'FAITH_BASED', label: 'Faith-based / Mission' },
+              { value: 'COMMUNITY', label: 'Community' },
+              { value: 'INTERNATIONAL', label: 'International' },
+            ]}
           />
         </Field>
         {[
@@ -253,6 +256,7 @@ function RulesTab() {
         sync: s.sync,
         canteen: s.canteen,
         communication: s.communication,
+        school: s.school,
       };
       delete body.finance.paystackSecretKeySet;
       if (paystack) body.finance.paystackSecretKey = paystack;
@@ -267,13 +271,54 @@ function RulesTab() {
       setBusy(false);
     }
   };
-  const bands = s.academic.gradingScheme as any[];
+  const [gradeLevel, setGradeLevel] = useState<'KG' | 'PRIMARY' | 'JHS'>('PRIMARY');
+  const schemes = s.academic.gradingSchemes ?? {};
+  const bands = (schemes[gradeLevel] ?? s.academic.gradingScheme) as any[];
+  const setBands = (next: any[]) => up('academic', 'gradingSchemes', { ...schemes, [gradeLevel]: next });
+  const levels: Array<'KG' | 'PRIMARY' | 'JHS'> = ['KG', 'PRIMARY', 'JHS'];
+  const levelLabels: Record<string, string> = { KG: 'Kindergarten', PRIMARY: 'Primary (Basic 1–6)', JHS: 'JHS (Basic 7–9)' };
   return (
     <div className="space-y-4">
       <Alert kind="info">
         These rules drive the whole system for your school — grading, promotion, attendance, invoicing, offline sync and
         canteen behaviour. Every change is audited.
       </Alert>
+      <Card title="School levels & residency">
+        <Field label="Levels this school runs" hint="Controls which classes and fee structures apply">
+          <div className="flex flex-wrap gap-2">
+            {levels.map((l) => {
+              const checked = (s.school?.levels ?? []).includes(l);
+              return (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() =>
+                    up('school', 'levels', checked ? s.school.levels.filter((x: string) => x !== l) : [...(s.school?.levels ?? []), l])
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${checked ? 'border-brand bg-brand-soft text-brand-dark' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                >
+                  {levelLabels[l]}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
+        <Field label="Day or boarding?" className="mt-3 max-w-xs">
+          <Select
+            value={s.school?.residency ?? 'DAY'}
+            onChange={(e) => up('school', 'residency', e.target.value)}
+            options={[
+              { value: 'DAY', label: 'Day school' },
+              { value: 'BOARDING', label: 'Boarding school' },
+              { value: 'DAY_AND_BOARDING', label: 'Both day and boarding students' },
+            ]}
+          />
+        </Field>
+        <p className="mt-2 text-xs text-slate-500">
+          Set to &quot;Day school&quot; or &quot;Boarding school&quot; only, students can&apos;t be enrolled with the other residency.
+          Choose &quot;Both&quot; to decide per student.
+        </p>
+      </Card>
       <Card title="Academic rules">
         <div className="grid gap-3 sm:grid-cols-4">
           <Field label="Class score weight (%)">
@@ -323,6 +368,21 @@ function RulesTab() {
           />
         </div>
         <p className="label mt-4">Grading scheme</p>
+        <p className="mb-2 text-xs text-slate-500">
+          KG and Primary usually use letter grades; JHS uses the BECE 1–9 scale. Each level has its own bands.
+        </p>
+        <div className="mb-2 flex gap-1">
+          {levels.map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setGradeLevel(l)}
+              className={`rounded-md px-3 py-1 text-xs font-medium ${gradeLevel === l ? 'bg-brand text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {levelLabels[l]}
+            </button>
+          ))}
+        </div>
         <table className="table">
           <thead>
             <tr>
@@ -340,11 +400,7 @@ function RulesTab() {
                   <Input
                     value={b.grade}
                     onChange={(e) =>
-                      up(
-                        'academic',
-                        'gradingScheme',
-                        bands.map((x, j) => (j === i ? { ...x, grade: e.target.value } : x)),
-                      )
+                      setBands(bands.map((x, j) => (j === i ? { ...x, grade: e.target.value } : x)))
                     }
                   />
                 </td>
@@ -353,11 +409,7 @@ function RulesTab() {
                     type="number"
                     value={b.min}
                     onChange={(e) =>
-                      up(
-                        'academic',
-                        'gradingScheme',
-                        bands.map((x, j) => (j === i ? { ...x, min: Number(e.target.value) } : x)),
-                      )
+                      setBands(bands.map((x, j) => (j === i ? { ...x, min: Number(e.target.value) } : x)))
                     }
                   />
                 </td>
@@ -366,11 +418,7 @@ function RulesTab() {
                     type="number"
                     value={b.max}
                     onChange={(e) =>
-                      up(
-                        'academic',
-                        'gradingScheme',
-                        bands.map((x, j) => (j === i ? { ...x, max: Number(e.target.value) } : x)),
-                      )
+                      setBands(bands.map((x, j) => (j === i ? { ...x, max: Number(e.target.value) } : x)))
                     }
                   />
                 </td>
@@ -378,11 +426,7 @@ function RulesTab() {
                   <Input
                     value={b.remark}
                     onChange={(e) =>
-                      up(
-                        'academic',
-                        'gradingScheme',
-                        bands.map((x, j) => (j === i ? { ...x, remark: e.target.value } : x)),
-                      )
+                      setBands(bands.map((x, j) => (j === i ? { ...x, remark: e.target.value } : x)))
                     }
                   />
                 </td>
@@ -390,11 +434,7 @@ function RulesTab() {
                   <button
                     className="text-red-600"
                     onClick={() =>
-                      up(
-                        'academic',
-                        'gradingScheme',
-                        bands.filter((_, j) => j !== i),
-                      )
+                      setBands(bands.filter((_, j) => j !== i))
                     }
                   >
                     <Trash2 size={14} />
@@ -407,7 +447,7 @@ function RulesTab() {
         <Button
           variant="secondary"
           className="mt-2"
-          onClick={() => up('academic', 'gradingScheme', [...bands, { grade: '', min: 0, max: 0, remark: '' }])}
+          onClick={() => setBands([...bands, { grade: '', min: 0, max: 0, remark: '' }])}
         >
           <Plus size={14} /> Add band
         </Button>

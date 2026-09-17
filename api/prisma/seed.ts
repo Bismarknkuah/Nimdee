@@ -67,7 +67,12 @@ async function main() {
           secondaryColor: '#134e4a',
           status: 'ACTIVE',
           approvedAt: now,
-          settings: { ...DEFAULT_SETTINGS, finance: { ...DEFAULT_SETTINGS.finance, defaultInstallments: 3 } } as any,
+          settings: {
+            ...DEFAULT_SETTINGS,
+            finance: { ...DEFAULT_SETTINGS.finance, defaultInstallments: 3 },
+            // Demo school teaches Primary and JHS only (no KG classes seeded) and takes both day and boarding students.
+            school: { ...DEFAULT_SETTINGS.school, levels: ['PRIMARY', 'JHS'], residency: 'DAY_AND_BOARDING' },
+          } as any,
           websiteConfig: defaultWebsiteConfig('Bright Future Academy') as any,
           domains: {
             create: {
@@ -214,8 +219,8 @@ async function main() {
       for (const [name, code] of subjectDefs)
         subjects.push(await tx.subject.create({ data: { tenantId: T, name, code } }));
       const classDefs = [
-        ['Primary 5', 'PRIMARY'],
-        ['Primary 6', 'PRIMARY'],
+        ['Basic 5', 'PRIMARY'],
+        ['Basic 6', 'PRIMARY'],
         ['JHS 1', 'JHS'],
         ['JHS 2', 'JHS'],
       ];
@@ -506,7 +511,7 @@ async function main() {
           description: 'Using School OS offline attendance and results workflow.',
         },
         {
-          title: 'Primary 5 Museum Trip',
+          title: 'Basic 5 Museum Trip',
           type: 'TRIP',
           startAt: dayAgo(-16),
           location: 'National Museum, Accra',
@@ -533,7 +538,7 @@ async function main() {
           },
         });
 
-      // Assignments (Primary 5 English & Maths)
+      // Assignments (Basic 5 English & Maths)
       const eng = subjects.find((x: any) => x.code === 'ENG'),
         math = subjects.find((x: any) => x.code === 'MATH');
       const a1 = await tx.assignment.create({

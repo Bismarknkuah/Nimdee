@@ -1,4 +1,6 @@
 /** Per-school rules engine. Stored as JSON on Tenant.settings and merged with these defaults. */
+import { JHS_GRADING, PRIMARY_GRADING, RESIDENCY_OPTIONS, LEVEL_GROUPS, levelGroupOf } from './ghana-basic';
+
 export interface GradeBand {
   grade: string;
   min: number;
@@ -17,6 +19,14 @@ export interface SchoolSettings {
     resultApprovalLevels: Array<'REVIEW' | 'APPROVE'>;
     termsPerYear: number;
     levels: string[];
+    /** Grading bands per level group; falls back to gradingScheme when a level has none */
+    gradingSchemes?: Partial<Record<'KG' | 'PRIMARY' | 'JHS', GradeBand[]>>;
+  };
+  /** Which basic-school levels the school runs and whether it is a day/boarding school */
+  school: {
+    levels: Array<'KG' | 'PRIMARY' | 'JHS'>;
+    residency: 'DAY' | 'BOARDING' | 'DAY_AND_BOARDING';
+    curriculum: 'GES_STANDARDS_BASED';
   };
   attendance: {
     statuses: string[];
@@ -57,25 +67,17 @@ export interface SchoolSettings {
 
 export const DEFAULT_SETTINGS: SchoolSettings = {
   academic: {
-    gradingScheme: [
-      { grade: 'A1', min: 80, max: 100, remark: 'Excellent', points: 1 },
-      { grade: 'B2', min: 70, max: 79.99, remark: 'Very Good', points: 2 },
-      { grade: 'B3', min: 65, max: 69.99, remark: 'Good', points: 3 },
-      { grade: 'C4', min: 60, max: 64.99, remark: 'Credit', points: 4 },
-      { grade: 'C5', min: 55, max: 59.99, remark: 'Credit', points: 5 },
-      { grade: 'C6', min: 50, max: 54.99, remark: 'Credit', points: 6 },
-      { grade: 'D7', min: 45, max: 49.99, remark: 'Pass', points: 7 },
-      { grade: 'E8', min: 40, max: 44.99, remark: 'Pass', points: 8 },
-      { grade: 'F9', min: 0, max: 39.99, remark: 'Fail', points: 9 },
-    ],
+    gradingScheme: JHS_GRADING,
+    gradingSchemes: { KG: PRIMARY_GRADING, PRIMARY: PRIMARY_GRADING, JHS: JHS_GRADING },
     passMark: 50,
     promotionAverage: 50,
-    caWeight: 30,
-    examWeight: 70,
+    caWeight: 50,
+    examWeight: 50,
     resultApprovalLevels: ['REVIEW', 'APPROVE'],
     termsPerYear: 3,
-    levels: ['NURSERY', 'KG', 'PRIMARY', 'JHS', 'SHS'],
+    levels: ['KG', 'PRIMARY', 'JHS'],
   },
+  school: { levels: ['KG', 'PRIMARY', 'JHS'], residency: 'DAY_AND_BOARDING', curriculum: 'GES_STANDARDS_BASED' },
   attendance: {
     statuses: ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED', 'SICK'],
     schoolStartTime: '07:30',
@@ -222,4 +224,10 @@ export function validateSettings(s: any) {
     throw new Error('defaultInstallments must be between 1 and 12');
   if (!['LATEST_WINS', 'SERVER_WINS', 'MANUAL'].includes(s.sync.conflictPolicy))
     throw new Error('Invalid sync conflict policy');
+}
+
+/** Grading bands for a class level: the level-specific scheme when the school has one, else the general scheme. */
+export function schemeForLevel(settings: SchoolSettings, level?: string | null): GradeBand[] {
+  const group = levelGroupOf(level);
+  return settings.academic.gradingSchemes?.[group] ?? settings.academic.gradingScheme;
 }

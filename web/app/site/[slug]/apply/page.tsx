@@ -103,7 +103,7 @@ export default function ApplyPage() {
                   value={f.appliedLevel}
                   onChange={set('appliedLevel')}
                   placeholder="Select level"
-                  options={(levels.length ? levels : ['PRIMARY', 'JHS', 'SHS']).map((l) => ({ value: l, label: l }))}
+                  options={(levels.length ? levels : ['KG', 'PRIMARY', 'JHS']).map((l) => ({ value: l, label: l }))}
                 />
               </Field>
               <Field label="Preferred class (optional)">

@@ -5,6 +5,7 @@ import { RequireAnyPermission, RequireFeature, RequirePermissions } from '../com
 import { ctx, hasPermission, tid } from '../common/context/request-context';
 import { addDays, isoDate, startOfToday, toDateOnly } from '../common/utils';
 import { PrismaService } from '../prisma/prisma.service';
+import { schemeForLevel } from '../common/settings';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { PdfService } from './pdf.service';
 
@@ -197,7 +198,7 @@ export class DocumentsController {
             firstName: true,
             lastName: true,
             otherNames: true,
-            class: { select: { id: true, name: true } },
+            class: { select: { id: true, name: true, level: true } },
           },
         },
       },
@@ -215,7 +216,7 @@ export class DocumentsController {
         term,
         year: term?.academicYear,
         sheet: s,
-        scheme: snap.settings.academic.gradingScheme,
+        scheme: schemeForLevel(snap.settings, s.student.class?.level),
       })),
     );
     this.send(res, buf, `report-cards-${term?.name.replace(/\s+/g, '_') ?? 'term'}.pdf`);

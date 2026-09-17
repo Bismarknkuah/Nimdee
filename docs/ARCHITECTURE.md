@@ -47,6 +47,16 @@ School OS is a multi-tenant SaaS: one deployment serves every school, and every 
 | Plans | `Plan.features[]` + `Tenant.featureOverrides[]` → `FeatureGuard`; student limits enforced on enrolment. |
 | Lifecycle | PENDING → ACTIVE → SUSPENDED (platform), TRIAL → ACTIVE → PAST_DUE → GRACE → SUSPENDED (subscription job). |
 
+## Ghana basic-school scope
+
+School OS is built for Ghana's basic-education band: **Kindergarten, Primary (Basic 1–6) and JHS (Basic 7–9)**, day and/or boarding. This shapes several parts of the model rather than being a UI-only convention:
+
+- `Tenant.settings.school` — `{ levels: ('KG'|'PRIMARY'|'JHS')[], residency: 'DAY'|'BOARDING'|'DAY_AND_BOARDING', curriculum: 'GES_STANDARDS_BASED' }`, validated by `validateSettings()` in `common/settings.ts`.
+- `common/ghana-basic.ts` is the single source of truth for the standard class progression (KG 1, KG 2, Basic 1–6, JHS 1–3, with legacy aliases like "Primary 5" → "Basic 5"), the GES subject presets per level, and the two default grading scales — letter grades (A–F) for KG/Primary and the BECE-style 1–9 scale for JHS.
+- `AcademicService.ghanaBasicSetup()` is idempotent: it creates only the classes/subjects that don't already exist (matched by name or alias), links each class's promotion target (`SchoolClass.nextClassId`) in stage order, and attaches the level's subjects. It runs automatically right after school registration and can be re-run any time from Academics → "Set up standard classes & subjects".
+- `schemeForLevel(settings, classLevel)` picks the right grading bands (KG/Primary/JHS) wherever a result sheet or report card is computed, falling back to the school's general `gradingScheme` if no per-level override exists.
+- Residency (`Tenant.settings.school.residency`) is enforced in `StudentsService`: a `DAY` school rejects `isBoarding: true`, a `BOARDING` school forces it, and `DAY_AND_BOARDING` leaves the choice per student. The frontend student form adapts the same way (hides the toggle for single-residency schools).
+
 ## Key flows
 
 * **Onboarding**: `POST /public/register` creates tenant + admin + system roles + default academic year/terms + trial subscription; the platform approves (or auto-approves) → school becomes ACTIVE.

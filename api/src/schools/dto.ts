@@ -1,4 +1,4 @@
-import {
+import { IsArray, IsEnum,
   IsBoolean,
   IsEmail,
   IsIn,
@@ -30,6 +30,12 @@ export class RegisterSchoolDto {
   @IsEmail() adminEmail: string;
   @IsString() @MinLength(8) adminPassword: string;
   @IsOptional() @IsString() planCode?: string;
+  /** Which basic-school levels the school runs (defaults to all three) */
+  @IsOptional() @IsArray() @IsEnum(['KG', 'PRIMARY', 'JHS'], { each: true }) levels?: Array<'KG' | 'PRIMARY' | 'JHS'>;
+  /** Day school, boarding school or both */
+  @IsOptional() @IsEnum(['DAY', 'BOARDING', 'DAY_AND_BOARDING']) residency?: 'DAY' | 'BOARDING' | 'DAY_AND_BOARDING';
+  /** Create the standard classes and GES subjects immediately (default true) */
+  @IsOptional() @IsBoolean() setupStandardClasses?: boolean;
 }
 
 export class UpdateSchoolProfileDto {
@@ -64,6 +70,7 @@ export class UpdateSettingsDto {
   @IsOptional() @IsObject() sync?: any;
   @IsOptional() @IsObject() canteen?: any;
   @IsOptional() @IsObject() communication?: any;
+  @IsOptional() @IsObject() school?: any;
 }
 
 export class AddDomainDto {

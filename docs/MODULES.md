@@ -2,19 +2,21 @@
 
 Every module lives in `api/src/<module>/` (DTOs, service, controller, module) and has one or more pages under `web/app/school/`. Permissions come from `api/src/common/permissions.ts`; features from `api/src/common/features.ts`.
 
+Every school configures which basic-education levels it runs (KG / Primary / JHS) and its residency (day / boarding / both) under Settings → Rules engine → School levels & residency — this is enforced in the `academic` and `students` modules below. See `ARCHITECTURE.md#ghana-basic-school-scope` for the underlying model.
+
 | Module | What it does | Feature flag | Key permissions | Frontend |
 |---|---|---|---|---|
 | auth | Login, refresh-token rotation, logout, password change/reset, `GET /auth/me` | — | — | `/login`, `/platform/login` |
 | platform | Schools registry, approve/suspend/reactivate, plans, subscription invoices, feature overrides, support sessions, cross-school audit, sync health, per-school data export | — | platform account | `/platform/*` |
 | schools | Profile, branding, rules engine, domains (DNS TXT verification), website builder | WEBSITE, CUSTOM_DOMAIN | SCHOOL_MANAGE, SETTINGS_MANAGE | `/school/settings`, `/school/website` |
 | users / roles | Users, roles, 60+ permissions, password resets | — | USERS_MANAGE, ROLES_MANAGE | `/school/users` |
-| academic | Years, terms, classes, subjects, class–subject–teacher, rooms | ACADEMICS | ACADEMIC_MANAGE | `/school/academics`, `/school/classes/[id]` |
-| students | Enrolment (auto IDs, plan limits), guardians, promotion/transfer, signed QR ID cards, verification | ACADEMICS | STUDENT_* | `/school/students`, `/school/id-cards` |
+| academic | Years, terms, classes, subjects, class–subject–teacher, rooms, **Ghana basic-school setup** (`GET/POST /academic/ghana-basic`: idempotent KG/Primary/JHS classes + GES subjects + promotion chain) | ACADEMICS | ACADEMIC_MANAGE | `/school/academics`, `/school/classes/[id]` |
+| students | Enrolment (auto IDs, plan limits, **residency enforced by the school's day/boarding setting**), guardians, promotion/transfer, signed QR ID cards, verification | ACADEMICS | STUDENT_* | `/school/students`, `/school/id-cards` |
 | staff | Staff records, logins, my-classes | — | STAFF_* | `/school/staff` |
 | attendance | Register, summaries, daily overview, chronic absentees, CSV | ATTENDANCE | ATTENDANCE_MARK/VIEW | `/school/attendance` |
 | sync | Device registration, snapshot, push queue, conflicts, operations log | OFFLINE_SYNC | SYNC_MANAGE | `/school/sync` |
 | fees | Categories, structures, discounts, invoice generation, installments, payments, receipts, reversals, ledger, statements, Paystack | FEES | FEES_*, INVOICE_CREATE, PAYMENT_RECORD, REFUND_APPROVE | `/school/fees/*` |
-| results | Assessments, marks, computation, workflow, comments, report cards | RESULTS | RESULT_ENTER/REVIEW/APPROVE/PUBLISH | `/school/results/*` |
+| results | Assessments, marks, computation (grading scale picked per class level — letters for KG/Primary, BECE 1–9 for JHS), workflow, comments, report cards | RESULTS | RESULT_ENTER/REVIEW/APPROVE/PUBLISH | `/school/results/*` |
 | timetable | Periods, slots, clash detection, class/teacher/room views | TIMETABLE | TIMETABLE_MANAGE/VIEW | `/school/timetable` |
 | canteen | Items, stock, wallets, limits, POS, meal plans, daily summary | CANTEEN | CANTEEN_*, WALLET_TOPUP | `/school/canteen/*` |
 | inventory | Assets and supplies with movements | INVENTORY | INVENTORY_* | `/school/inventory` |

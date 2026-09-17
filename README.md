@@ -1,6 +1,8 @@
-# School OS — multi-tenant School Operating System
+# Nimdee — School Operating System for Ghana's basic schools
 
-A production-grade SaaS platform for schools: one codebase, many schools, each fully isolated at the database layer, each owning and able to download its data.
+A production-grade, multi-tenant SaaS platform for **KG, Primary (Basic 1–6) and JHS (Basic 7–9)** schools — day, boarding, or both. One codebase serves every school; each school's data is fully isolated at the database layer and each owns and can download its own data.
+
+School OS ships with the Ghana Education Service standards-based curriculum out of the box: standard classes (KG 1 → JHS 3), GES subjects per level, and the right grading scale for each stage (letter grades for KG/Primary, the BECE 1–9 scale for JHS). A school picks which levels it runs and whether it takes day students, boarders, or both — the platform enforces that choice everywhere it matters (enrolment, fees, report cards).
 
 | Layer | Stack | Hosting |
 |---|---|---|
@@ -10,21 +12,23 @@ A production-grade SaaS platform for schools: one codebase, many schools, each f
 
 ## What is implemented
 
-Everything below is working end-to-end and exercised by **233 automated API checks** (`api/scripts/smoke.js`) plus **26 unit tests** (`npm test`). The frontend type-checks and builds (66 pages).
+Everything below is working end-to-end and exercised by **233 automated API checks** (`api/scripts/smoke.js`) plus **29 unit tests** (`npm test`). The frontend type-checks and builds (66 pages).
+
+**Ghana basic-school setup** — pick your levels (KG / Primary / JHS) and residency (day / boarding / both) at registration; the standard classes and GES subjects are created automatically (idempotent — existing schools can run it any time from Academics), with the promotion chain wired KG 1 → KG 2 → Basic 1 → … → JHS 3. Grading bands are per level (letters for KG/Primary, BECE 1–9 for JHS) and fully editable under Settings → Rules engine.
 
 **Platform console** — school registry and approval workflow, plans and feature flags, subscription invoices and upgrades, feature overrides, audited support sessions, cross-school audit log, sync health, per-school **data export**.
 
 **Onboarding & identity** — self-service registration, automatic subdomain, system roles (School Admin, Principal, Academic Head, Teacher, Class Teacher, Accountant, Cashier, Canteen Manager, Nurse, Librarian, HR Officer, Parent, Student) with 60+ granular permissions, custom roles, JWT + rotating refresh tokens.
 
-**Branding, website & rules** — logo/colours/font applied everywhere (portal, website, PDFs); no-code website builder; custom domains with DNS verification; online admissions; a per-school **rules engine** (grading bands, weights, promotion, attendance thresholds, invoicing, installments, discounts, offline conflict policy, canteen limits, SMS, Paystack).
+**Branding, website & rules** — logo/colours/font applied everywhere (portal, website, PDFs); no-code website builder; custom domains with DNS verification; online admissions; a per-school **rules engine** (per-level grading bands, weights, promotion, attendance thresholds, invoicing, installments, discounts, offline conflict policy, canteen limits, SMS, Paystack, school levels & residency).
 
-**Academics** — years/terms, classes, subjects, teacher assignments, rooms, periods, timetable with clash detection, assessments and marks, computed result sheets with dense ranking, review→approve→publish workflow, comments, report cards.
+**Academics** — years/terms, classes, subjects, teacher assignments, rooms, periods, timetable with clash detection, assessments and marks, computed result sheets with dense ranking (per-level grading), review→approve→publish workflow, comments, report cards.
 
-**People** — students (auto IDs, plan limits, promotion), guardians and parent logins, staff and logins, signed-QR ID cards with verification, admissions.
+**People** — students (auto IDs, plan limits, promotion, residency-aware boarding enforcement), guardians and parent logins, staff and logins, signed-QR ID cards with verification, admissions.
 
 **Attendance — offline-first** — class registers on any device, IndexedDB queue, automatic sync with idempotent operations, versioned records and three conflict policies (latest wins / server wins / manual resolution screen); daily overview; chronic absentee report.
 
-**Finance** — fee categories/structures per level or class, discounts and sibling discounts, invoice generation with installments, cash/MoMo/bank/cheque payments with receipts, **Paystack** online payments (fees and wallet top-ups) with verified webhooks, reversals, append-only ledger, statements, ageing report, top defaulters, CSV exports.
+**Finance** — fee categories/structures per level or class (with separate day/boarding rates), discounts and sibling discounts, invoice generation with installments, cash/MoMo/bank/cheque payments with receipts, **Paystack** online payments (fees and wallet top-ups) with verified webhooks, reversals, append-only ledger, statements, ageing report, top defaulters, CSV exports.
 
 **Canteen & inventory** — menu and stock with low-stock alerts, student wallets with daily limits and freezing, point-of-sale (wallet or cash, QR scan), meal plans, inventory items and movements.
 
@@ -32,9 +36,9 @@ Everything below is working end-to-end and exercised by **233 automated API chec
 
 **Communication** — announcements to targeted audiences by in-app, SMS and email; notifications centre.
 
-**Reports & analytics** — enrolment, attendance by class and week, finance ageing and collections, academic performance by class/subject, staff workload, birthdays.
+**Reports & analytics** — enrolment (with day/boarding split), attendance by class and week, finance ageing and collections, academic performance by class/subject, staff workload, birthdays.
 
-**Printable documents (PDF)** — receipts, invoices, statements, class lists, attendance registers, single and batch report cards, transcripts, ID card sheets, payslips, timetables.
+**Printable documents (PDF)** — receipts, invoices, statements, class lists, attendance registers, single and batch report cards (grading scale matches the student's level), transcripts, ID card sheets, payslips, timetables.
 
 **Data ownership** — every school downloads its complete database (JSON, CSV, restorable SQL, or all in one ZIP) from Settings → Data & backup; the platform can export any school; every export is audited.
 
@@ -68,7 +72,7 @@ cp .env.example .env            # set DATABASE_URL=postgresql://postgres:YOURPAS
 npm install
 npx prisma generate
 npx prisma migrate deploy       # tables + Row-Level Security + application role
-npm run seed                    # demo school "Bright Future Academy" + platform owner
+npm run seed                    # demo school "Bright Future Academy" (Primary + JHS, day and boarding) + platform owner
 npm run start:dev               # http://localhost:4000 · Swagger at /docs
 
 # 3. Web (new terminal)

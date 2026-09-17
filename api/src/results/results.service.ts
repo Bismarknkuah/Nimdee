@@ -5,7 +5,7 @@ import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { StudentsService } from '../students/students.service';
 import { PdfService } from '../pdf/pdf.service';
 import { ctx, hasPermission, tid } from '../common/context/request-context';
-import { GradeBand } from '../common/settings';
+import { GradeBand, schemeForLevel } from '../common/settings';
 import { gradeFor } from './grading';
 import { money, toJson } from '../common/utils';
 import { AssessmentDto, CommentsDto, ComputeDto, SaveMarksDto, WorkflowDto } from './dto';
@@ -176,7 +176,11 @@ export class ResultsService {
     const db = this.prisma.db;
     const tenantId = tid();
     const settings = await this.tenants.settings(tenantId);
-    const { gradingScheme, caWeight, examWeight, promotionAverage, passMark } = settings.academic;
+    const { caWeight, examWeight, promotionAverage, passMark } = settings.academic;
+    const cls = await db.schoolClass.findUnique({ where: { id: dto.classId }, select: { level: true } });
+    if (!cls) throw new NotFoundException('Class not found');
+    // KG/Primary and JHS use different grade bands (letters vs BECE 1–9) — see Settings → Rules engine.
+    const gradingScheme = schemeForLevel(settings, cls.level);
     const term = await db.term.findUnique({ where: { id: dto.termId } });
     if (!term) throw new NotFoundException('Term not found');
     const lastSeq = await db.term.aggregate({
@@ -488,7 +492,7 @@ export class ResultsService {
             otherNames: true,
             gender: true,
             photoUrl: true,
-            class: { select: { id: true, name: true } },
+            class: { select: { id: true, name: true, level: true } },
           },
         },
       },
@@ -554,7 +558,7 @@ export class ResultsService {
       term: s.term,
       year,
       sheet: s,
-      scheme: snap.settings.academic.gradingScheme,
+      scheme: schemeForLevel(snap.settings, s.student.class?.level),
     });
     return { buffer: buf, filename: `${s.student.studentId}-${s.term.name.replace(/\s+/g, '_')}-report.pdf` };
   }

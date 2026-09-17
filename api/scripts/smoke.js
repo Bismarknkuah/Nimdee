@@ -207,7 +207,7 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/academic/classes', { token: A });
   check('classes listed with counts', r.status === 200 && r.data.length === 4 && r.data[0].studentCount === 8, r.data);
   const classes = r.data;
-  const p5 = classes.find((c) => c.name === 'Primary 5');
+  const p5 = classes.find((c) => c.name === 'Basic 5');
   const jhs1 = classes.find((c) => c.name === 'JHS 1');
   r = await call('GET', `/academic/classes/${p5.id}`, { token: A });
   check('class detail with subjects', r.status === 200 && r.data.subjects.length === 6, r.data);
@@ -275,7 +275,7 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/staff/my-classes', { token: T });
   check(
     'teacher sees own classes',
-    r.status === 200 && r.data.classTeacherOf.length === 1 && r.data.classTeacherOf[0].name === 'Primary 5',
+    r.status === 200 && r.data.classTeacherOf.length === 1 && r.data.classTeacherOf[0].name === 'Basic 5',
     r.data,
   );
   r = await call('GET', '/students', { token: T });

@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import * as bcrypt from 'bcryptjs';
 import { promises as dns } from 'dns';
 import { PrismaService } from '../prisma/prisma.service';
+import { AcademicService } from '../academic/academic.service';
+import { requestContext } from '../common/context/request-context';
 import { AuditService } from '../audit/audit.service';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { tid } from '../common/context/request-context';
@@ -25,6 +27,7 @@ export class SchoolsService {
     private prisma: PrismaService,
     private audit: AuditService,
     private cache: TenantCacheService,
+    private readonly academic: AcademicService,
   ) {}
 
   // ─────────────────────────── Onboarding ───────────────────────────
@@ -69,7 +72,7 @@ export class SchoolsService {
           registrationNumber: dto.registrationNumber,
           status: autoApprove ? 'ACTIVE' : 'PENDING',
           approvedAt: autoApprove ? now : null,
-          settings: DEFAULT_SETTINGS as any,
+          settings: { ...DEFAULT_SETTINGS, school: { ...DEFAULT_SETTINGS.school, levels: dto.levels?.length ? dto.levels : DEFAULT_SETTINGS.school.levels, residency: dto.residency ?? DEFAULT_SETTINGS.school.residency } } as any,
           websiteConfig: defaultWebsiteConfig(dto.name.trim()) as any,
           domains: {
             create: {
@@ -145,6 +148,14 @@ export class SchoolsService {
       );
       return { tenant, admin };
     });
+
+    // Standard KG/Primary/JHS classes and GES subjects for the levels the school runs (opt-out via setupStandardClasses=false).
+    if (dto.setupStandardClasses !== false) {
+      await requestContext.run(
+        { tenantId: result.tenant.id, userId: result.admin.id, actorType: 'TENANT', actorName: adminEmail, permissions: ['*'] } as any,
+        () => this.academic.ghanaBasicSetup({ levels: dto.levels?.length ? dto.levels : undefined }),
+      );
+    }
 
     await this.audit.log({
       action: 'SCHOOL_REGISTERED',

@@ -20,6 +20,7 @@ export class ListStudentsDto extends PaginationDto {
   @IsOptional() @IsString() classId?: string;
   @IsOptional() @IsEnum(STATUSES) status?: (typeof STATUSES)[number];
   @IsOptional() @IsEnum(GENDERS) gender?: (typeof GENDERS)[number];
+  @IsOptional() @IsEnum(['DAY', 'BOARDING']) residency?: 'DAY' | 'BOARDING';
 }
 
 export class GuardianInlineDto {

@@ -18,6 +18,14 @@ export class AcademicController {
     return this.academic.current();
   }
 
+  /** Ghana basic-school presets (KG / Primary / JHS classes, GES subjects, residency) and what this school has set up. */
+  @Get('ghana-basic') ghanaBasic() {
+    return this.academic.ghanaBasicCatalogue();
+  }
+  /** Creates the standard classes + GES subjects for the school's levels and links the promotion path. Idempotent. */
+  @Post('ghana-basic/setup') @RequirePermissions('ACADEMIC_MANAGE') ghanaBasicSetup(@Body() body: { levels?: Array<'KG' | 'PRIMARY' | 'JHS'>; attachSubjects?: boolean }) {
+    return this.academic.ghanaBasicSetup(body ?? {});
+  }
   @Get('years') years() {
     return this.academic.years();
   }

@@ -9,7 +9,7 @@ REST API at `/api/v1` — Swagger UI at `/docs`, OpenAPI JSON at `/docs-json` (c
 | `npm run build` / `npm run start:prod` | production build; start runs `prisma migrate deploy` first |
 | `npx prisma migrate deploy` | apply `prisma/migrations` (schema + Row-Level Security + app role) |
 | `npm run seed` | platform owner, plans and the "Bright Future Academy" demo school (32 students, staff, fees, results, canteen, incidents, events, homework, library, transport, clinic, messages, leave, payroll) |
-| `npm test` | 26 unit tests (money, grading, installments, rules validation, permission guard) |
+| `npm test` | 29 unit tests (money, grading, installments, rules validation, permission guard) |
 | `npm run smoke` | 233 end-to-end checks against a running API (`API_URL`, default http://localhost:4000) |
 | `npm run format` | Prettier |
 | `node scripts/gen-docs.js` | regenerate `docs/ERD.md` and `docs/API.md` |

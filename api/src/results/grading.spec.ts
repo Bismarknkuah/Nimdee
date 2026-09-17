@@ -1,21 +1,41 @@
-import { DEFAULT_SETTINGS } from '../common/settings';
+import { DEFAULT_SETTINGS, schemeForLevel } from '../common/settings';
 import { denseRank, gradeFor, weightedPercent } from './grading';
 
-const scheme = DEFAULT_SETTINGS.academic.gradingScheme;
+// The general default (and JHS specifically) uses the BECE-style 1–9 scale; KG/Primary use letter grades.
+const jhsScheme = DEFAULT_SETTINGS.academic.gradingScheme;
+const primaryScheme = DEFAULT_SETTINGS.academic.gradingSchemes!.PRIMARY!;
 
-describe('gradeFor (WAEC-style bands)', () => {
-  it('maps boundaries to the right grade', () => {
-    expect(gradeFor(100, scheme).grade).toBe('A1');
-    expect(gradeFor(80, scheme).grade).toBe('A1');
-    expect(gradeFor(79.9, scheme).grade).toBe('B2');
-    expect(gradeFor(50, scheme).grade).toBe('C6');
-    expect(gradeFor(0, scheme).grade).toBe('F9');
+describe('gradeFor (JHS: BECE 1–9 bands)', () => {
+  it('maps boundaries to the right grade (1 = highest, 9 = lowest)', () => {
+    expect(gradeFor(100, jhsScheme).grade).toBe('1');
+    expect(gradeFor(80, jhsScheme).grade).toBe('1');
+    expect(gradeFor(79.9, jhsScheme).grade).toBe('2');
+    expect(gradeFor(50, jhsScheme).grade).toBe('4');
+    expect(gradeFor(0, jhsScheme).grade).toBe('9');
   });
   it('falls back to the lowest band for out-of-range scores', () => {
-    expect(gradeFor(-5, scheme).grade).toBe('F9');
+    expect(gradeFor(-5, jhsScheme).grade).toBe('9');
   });
   it('carries the remark', () => {
-    expect(gradeFor(85, scheme).remark).toBeTruthy();
+    expect(gradeFor(85, jhsScheme).remark).toBeTruthy();
+  });
+});
+
+describe('gradeFor (KG/Primary: letter bands)', () => {
+  it('maps boundaries to letter grades', () => {
+    expect(gradeFor(85, primaryScheme).grade).toBe('A');
+    expect(gradeFor(65, primaryScheme).grade).toBe('C');
+    expect(gradeFor(10, primaryScheme).grade).toBe('F');
+  });
+});
+
+describe('schemeForLevel', () => {
+  it('picks the JHS scheme for a JHS class and the Primary scheme for a Primary class', () => {
+    expect(schemeForLevel(DEFAULT_SETTINGS, 'JHS')).toBe(jhsScheme);
+    expect(schemeForLevel(DEFAULT_SETTINGS, 'PRIMARY')).toBe(primaryScheme);
+  });
+  it('falls back to PRIMARY grading for KG when no KG-specific override is set', () => {
+    expect(schemeForLevel(DEFAULT_SETTINGS, 'KG')).toBe(DEFAULT_SETTINGS.academic.gradingSchemes!.KG);
   });
 });
 

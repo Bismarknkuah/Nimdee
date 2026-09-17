@@ -15,8 +15,8 @@ All endpoints except **auth** (login/refresh) and **public** require `Authorizat
 | auth | 11 |
 | platform | 24 |
 | school | 12 |
+| academic | 24 |
 | users | 9 |
-| academic | 22 |
 | students | 18 |
 | staff | 6 |
 | attendance | 5 |
@@ -164,25 +164,13 @@ All endpoints except **auth** (login/refresh) and **public** require `Authorizat
 | `GET` | `/school/website` |  |
 | `PUT` | `/school/website` |  |
 
-## users
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/users` |  |
-| `POST` | `/users` |  |
-| `PATCH` | `/users/{id}` |  |
-| `POST` | `/users/{id}/reset-password` |  |
-| `GET` | `/roles` |  |
-| `POST` | `/roles` |  |
-| `GET` | `/roles/permissions` |  |
-| `PATCH` | `/roles/{id}` |  |
-| `DELETE` | `/roles/{id}` |  |
-
 ## academic
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/academic/current` |  |
+| `GET` | `/academic/ghana-basic` |  |
+| `POST` | `/academic/ghana-basic/setup` |  |
 | `GET` | `/academic/years` |  |
 | `POST` | `/academic/years` |  |
 | `POST` | `/academic/rollover/preview` |  |
@@ -204,6 +192,20 @@ All endpoints except **auth** (login/refresh) and **public** require `Authorizat
 | `GET` | `/academic/rooms` |  |
 | `POST` | `/academic/rooms` |  |
 | `DELETE` | `/academic/rooms/{id}` |  |
+
+## users
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/users` |  |
+| `POST` | `/users` |  |
+| `PATCH` | `/users/{id}` |  |
+| `POST` | `/users/{id}/reset-password` |  |
+| `GET` | `/roles` |  |
+| `POST` | `/roles` |  |
+| `GET` | `/roles/permissions` |  |
+| `PATCH` | `/roles/{id}` |  |
+| `DELETE` | `/roles/{id}` |  |
 
 ## students
 

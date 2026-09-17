@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { GES_SUBJECTS, LEVEL_GROUPS, LEVEL_LABELS, LevelGroup, RESIDENCY_LABELS, RESIDENCY_OPTIONS, STANDARD_CLASSES, standardClassFor } from '../common/ghana-basic';
 import { AuditService } from '../audit/audit.service';
+import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { tid } from '../common/context/request-context';
 import { ClassDto, RoomDto, SetClassSubjectsDto, SubjectDto, TermDto, YearDto } from './dto';
 
@@ -9,6 +11,7 @@ export class AcademicService {
   constructor(
     private prisma: PrismaService,
     private audit: AuditService,
+    private tenants: TenantCacheService,
   ) {}
 
   /** Current academic year + term (falls back to the latest by date). */
@@ -250,4 +253,80 @@ export class AcademicService {
     await this.prisma.db.room.delete({ where: { id } });
     return { ok: true };
   }
+
+  // ─────────────────────────── Ghana basic-school presets ───────────────────────────
+  /** Catalogue for the UI: standard classes, GES subjects, residency options and what the school has configured. */
+  async ghanaBasicCatalogue() {
+    const settings = await this.tenants.settings(tid());
+    const classes = await this.prisma.db.schoolClass.findMany({ select: { id: true, name: true, level: true, nextClassId: true } });
+    const existing = new Map(classes.map((c) => [standardClassFor(c.name)?.name ?? c.name, c]));
+    return {
+      levels: LEVEL_GROUPS.map((l) => ({ code: l, label: LEVEL_LABELS[l], enabled: settings.school.levels.includes(l) })),
+      residency: { value: settings.school.residency, options: RESIDENCY_OPTIONS.map((r) => ({ code: r, label: RESIDENCY_LABELS[r] })) },
+      classes: STANDARD_CLASSES.map((c) => ({ ...c, exists: existing.has(c.name), classId: existing.get(c.name)?.id ?? null, inScope: settings.school.levels.includes(c.level) })),
+      subjects: GES_SUBJECTS,
+    };
+  }
+
+  /**
+   * Creates the standard classes and GES subjects for the levels the school runs, links the promotion
+   * path (KG 1 → KG 2 → Basic 1 … → JHS 3) and attaches the level's subjects to each class.
+   * Safe to run repeatedly: existing classes (by name or alias) and subjects (by code) are reused.
+   */
+  async ghanaBasicSetup(opts: { levels?: LevelGroup[]; attachSubjects?: boolean } = {}) {
+    const settings = await this.tenants.settings(tid());
+    const levels = (opts.levels?.length ? opts.levels : settings.school.levels) as LevelGroup[];
+    const tenantId = tid();
+    const result = await this.prisma.tenantTx(async (tx) => {
+      const subjectByCode = new Map<string, string>();
+      for (const s of await tx.subject.findMany({ select: { id: true, code: true } })) subjectByCode.set(s.code.toUpperCase(), s.id);
+      let subjectsCreated = 0;
+      for (const level of levels) {
+        for (const preset of GES_SUBJECTS[level]) {
+          if (subjectByCode.has(preset.code)) continue;
+          const created = await tx.subject.create({ data: { tenantId, name: preset.name, code: preset.code, isCore: preset.isCore } });
+          subjectByCode.set(preset.code, created.id);
+          subjectsCreated++;
+        }
+      }
+      const existing = await tx.schoolClass.findMany({ select: { id: true, name: true } });
+      const byStd = new Map<string, string>();
+      for (const c of existing) {
+        const std = standardClassFor(c.name);
+        if (std) byStd.set(std.name, c.id);
+      }
+      let classesCreated = 0;
+      const wanted = STANDARD_CLASSES.filter((c) => levels.includes(c.level));
+      for (const std of wanted) {
+        if (byStd.has(std.name)) continue;
+        const created = await tx.schoolClass.create({ data: { tenantId, name: std.name, level: std.level, capacity: 40 } });
+        byStd.set(std.name, created.id);
+        classesCreated++;
+      }
+      // Promotion chain in stage order (only among classes that exist).
+      const ordered = STANDARD_CLASSES.filter((c) => byStd.has(c.name)).sort((a, b) => a.stage - b.stage);
+      for (let i = 0; i < ordered.length; i++) {
+        const next = ordered[i + 1];
+        await tx.schoolClass.update({ where: { id: byStd.get(ordered[i].name)! }, data: { nextClassId: next ? byStd.get(next.name)! : null } });
+      }
+      let linksCreated = 0;
+      if (opts.attachSubjects !== false) {
+        for (const std of wanted) {
+          const classId = byStd.get(std.name)!;
+          for (const preset of GES_SUBJECTS[std.level]) {
+            const subjectId = subjectByCode.get(preset.code)!;
+            const link = await tx.classSubject.findUnique({ where: { classId_subjectId: { classId, subjectId } } });
+            if (!link) {
+              await tx.classSubject.create({ data: { tenantId, classId, subjectId } });
+              linksCreated++;
+            }
+          }
+        }
+      }
+      return { levels, classesCreated, subjectsCreated, linksCreated, classes: ordered.map((c) => ({ name: c.name, level: c.level, id: byStd.get(c.name) })) };
+    });
+    await this.audit.log({ action: 'GHANA_BASIC_SETUP', entity: 'Tenant', entityId: tenantId, after: { levels, classesCreated: result.classesCreated, subjectsCreated: result.subjectsCreated } });
+    return result;
+  }
+
 }

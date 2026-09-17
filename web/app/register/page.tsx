@@ -35,6 +35,8 @@ export default function RegisterSchool() {
     name: '',
     slug: '',
     type: 'BASIC',
+    levels: ['KG', 'PRIMARY', 'JHS'],
+    residency: 'DAY',
     region: '',
     district: '',
     address: '',
@@ -63,6 +65,7 @@ export default function RegisterSchool() {
 
   const submit = async () => {
     if (!f.agree) return toast.error('Please accept the terms to continue');
+    if (!f.levels.length) return toast.error('Select at least one level (KG, Primary or JHS)');
     setBusy(true);
     try {
       const { agree, ...body } = f;
@@ -93,6 +96,10 @@ export default function RegisterSchool() {
               <span className="text-slate-500">Sign in with:</span> <b>{done.loginHint.email}</b>
             </p>
           </div>
+          <p className="mt-4 text-xs text-slate-500">
+            We&apos;ve already set up your classes ({f.levels.map((l: string) => (l === 'KG' ? 'Kindergarten' : l === 'PRIMARY' ? 'Primary' : 'JHS')).join(', ')}) and the GES
+            standards-based subjects for each — ready under Academics.
+          </p>
           <Link
             href={`/login`}
             className="btn-primary mt-6"
@@ -123,17 +130,43 @@ export default function RegisterSchool() {
               >
                 <Input value={f.slug} onChange={set('slug')} placeholder={slugPreview} />
               </Field>
+              <Field label="Levels your school teaches" hint="School OS is built for basic schools — pick every level you run">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ['KG', 'Kindergarten'],
+                    ['PRIMARY', 'Primary (Basic 1–6)'],
+                    ['JHS', 'JHS (Basic 7–9)'],
+                  ].map(([code, label]) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() =>
+                        setF({
+                          ...f,
+                          levels: f.levels.includes(code) ? f.levels.filter((l: string) => l !== code) : [...f.levels, code],
+                        })
+                      }
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                        f.levels.includes(code) ? 'border-brand bg-brand-soft text-brand-dark' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Day or boarding?">
+                <Select
+                  value={f.residency}
+                  onChange={set('residency')}
+                  options={[
+                    { value: 'DAY', label: 'Day school' },
+                    { value: 'BOARDING', label: 'Boarding school' },
+                    { value: 'DAY_AND_BOARDING', label: 'Both day and boarding students' },
+                  ]}
+                />
+              </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="School type">
-                  <Select
-                    value={f.type}
-                    onChange={set('type')}
-                    options={['BASIC', 'SECONDARY', 'INTERNATIONAL', 'TERTIARY', 'MIXED'].map((v) => ({
-                      value: v,
-                      label: v.charAt(0) + v.slice(1).toLowerCase(),
-                    }))}
-                  />
-                </Field>
                 <Field label="Region">
                   <Select
                     value={f.region}

@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { classOptions } from '@/lib/academic';
+import { useAuth } from '@/lib/auth';
 import { Button, Checkbox, Field, Input, Select, Textarea } from '@/components/ui';
 
 const GENDERS = [
@@ -47,6 +48,13 @@ export function StudentForm({
   });
   const [g, setG] = useState<any>({ firstName: '', lastName: '', phone: '', email: '', relationship: 'PARENT' });
   const [busy, setBusy] = useState(false);
+  const { me } = useAuth();
+  const residency = me?.tenant?.settings?.school?.residency ?? 'DAY_AND_BOARDING';
+  useEffect(() => {
+    if (residency === 'DAY' && f.isBoarding) setF((x: any) => ({ ...x, isBoarding: false }));
+    if (residency === 'BOARDING' && !f.isBoarding) setF((x: any) => ({ ...x, isBoarding: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residency]);
   const set = (k: string) => (e: any) =>
     setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const setg = (k: string) => (e: any) => setG({ ...g, [k]: e.target.value });
@@ -100,9 +108,16 @@ export function StudentForm({
         <Field label="House">
           <Input value={f.house ?? ''} onChange={set('house')} />
         </Field>
-        <div className="flex items-end pb-2">
-          <Checkbox label="Boarding student" checked={!!f.isBoarding} onChange={set('isBoarding')} />
-        </div>
+        {residency === 'DAY_AND_BOARDING' && (
+          <div className="flex items-end pb-2">
+            <Checkbox label="Boarding student" checked={!!f.isBoarding} onChange={set('isBoarding')} />
+          </div>
+        )}
+        {residency !== 'DAY_AND_BOARDING' && (
+          <div className="flex items-end pb-2 text-xs text-slate-500">
+            {residency === 'BOARDING' ? 'All students at this school are boarders.' : 'This is a day school — no boarding students.'}
+          </div>
+        )}
         <Field label="Previous school">
           <Input value={f.previousSchool ?? ''} onChange={set('previousSchool')} />
         </Field>

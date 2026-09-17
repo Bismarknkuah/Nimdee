@@ -30,6 +30,8 @@ export default function AcademicsPage() {
   const classes = useApi<any[]>('/academic/classes');
   const subjects = useApi<any[]>('/academic/subjects');
   const rooms = useApi<any[]>('/academic/rooms');
+  const ghana = useApi<any>('/academic/ghana-basic');
+  const [settingUp, setSettingUp] = useState(false);
   const staff = useApi(tab === 'classes' ? '/staff?pageSize=200&staffType=TEACHING' : null, [tab]);
   const [modal, setModal] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
@@ -87,6 +89,43 @@ export default function AcademicsPage() {
   return (
     <div>
       <PageHeader title="Academics" subtitle="Academic years, terms, classes, subjects and rooms" />
+      {manage && ghana.data && ghana.data.classes.some((c: any) => c.inScope && !c.exists) && (
+        <Card title="Set up standard KG / Primary / JHS classes" className="mb-4">
+          <p className="mb-3 text-sm text-slate-600">
+            Create the standard classes and GES standards-based subjects for the levels this school runs. Existing
+            classes and subjects are left untouched — this only adds what&apos;s missing.
+          </p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {ghana.data.classes
+              .filter((c: any) => c.inScope)
+              .map((c: any) => (
+                <Badge key={c.name} tone={c.exists ? 'emerald' : 'slate'}>
+                  {c.name}
+                  {c.exists ? ' ✓' : ''}
+                </Badge>
+              ))}
+          </div>
+          <Button
+            loading={settingUp}
+            onClick={async () => {
+              setSettingUp(true);
+              try {
+                const r = await api.post('/academic/ghana-basic/setup', {});
+                toast.success(`Created ${r.classesCreated} class(es) and ${r.subjectsCreated} subject(s)`);
+                classes.reload();
+                subjects.reload();
+                ghana.reload();
+              } catch (e: any) {
+                toast.error(e.message);
+              } finally {
+                setSettingUp(false);
+              }
+            }}
+          >
+            Set up standard classes & subjects
+          </Button>
+        </Card>
+      )}
       <Tabs
         value={tab}
         onChange={setTab}
@@ -363,10 +402,18 @@ export default function AcademicsPage() {
           {modal === 'class' && (
             <>
               <Field label="Class name">
-                <Input value={f.name ?? ''} onChange={set('name')} placeholder="Primary 4" />
+                <Input value={f.name ?? ''} onChange={set('name')} placeholder="Basic 4" />
               </Field>
-              <Field label="Level" hint="Used to match fee structures">
-                <Input value={f.level ?? ''} onChange={set('level')} placeholder="PRIMARY / JHS / SHS" />
+              <Field label="Level" hint="Used to match fee structures and grading">
+                <Select
+                  value={f.level ?? 'PRIMARY'}
+                  onChange={set('level')}
+                  options={[
+                    { value: 'KG', label: 'Kindergarten' },
+                    { value: 'PRIMARY', label: 'Primary (Basic 1–6)' },
+                    { value: 'JHS', label: 'JHS (Basic 7–9)' },
+                  ]}
+                />
               </Field>
               <Field label="Stream">
                 <Input value={f.stream ?? ''} onChange={set('stream')} placeholder="A" />

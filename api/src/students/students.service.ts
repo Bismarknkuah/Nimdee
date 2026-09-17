@@ -26,6 +26,7 @@ export class StudentsService {
     if (q.status) where.status = q.status;
     else where.status = { not: 'INACTIVE' };
     if (q.gender) where.gender = q.gender;
+    if (q.residency) where.isBoarding = q.residency === 'BOARDING';
     if (q.search)
       where.OR = [
         { firstName: { contains: q.search, mode: 'insensitive' } },
@@ -135,8 +136,24 @@ export class StudentsService {
     });
   }
 
+  /**
+   * Day schools cannot enrol boarders and boarding schools have only boarders; mixed schools choose per student.
+   * Returns the residency-corrected boarding flag.
+   */
+  private async applyResidency(isBoarding: boolean | undefined): Promise<boolean | undefined> {
+    const settings = await this.tenants.settings(tid());
+    const residency = settings.school?.residency ?? 'DAY_AND_BOARDING';
+    if (residency === 'DAY') {
+      if (isBoarding) throw new BadRequestException('This is a day school — students cannot be registered as boarders. Change residency under Settings → Profile.');
+      return isBoarding === undefined ? undefined : false;
+    }
+    if (residency === 'BOARDING') return isBoarding === undefined ? undefined : true;
+    return isBoarding;
+  }
+
   async create(dto: CreateStudentDto) {
     await this.enforcePlanLimit();
+    dto.isBoarding = (await this.applyResidency(dto.isBoarding ?? false)) ?? false;
     if (dto.classId) {
       const cls = await this.prisma.db.schoolClass.findUnique({ where: { id: dto.classId } });
       if (!cls) throw new BadRequestException('Class not found');
@@ -202,6 +219,7 @@ export class StudentsService {
     const before = await this.prisma.db.student.findUnique({ where: { id } });
     if (!before) throw new NotFoundException('Student not found');
     const data: any = { ...dto, version: { increment: 1 } };
+    if (dto.isBoarding !== undefined) data.isBoarding = await this.applyResidency(dto.isBoarding);
     if (dto.dateOfBirth) data.dateOfBirth = toDateOnly(dto.dateOfBirth);
     if (dto.classId === null) data.classId = null;
     const s = await this.prisma.db.student.update({ where: { id }, data });
