@@ -8,7 +8,7 @@ import { paginate, randomPassword } from '../common/utils';
 import { ProvidersService } from '../communications/providers.service';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { templates } from '../communications/templates';
-import { CreateUserDto, ListUsersDto, RoleDto, UpdateUserDto } from './dto';
+import { CreateUserDto, ListUsersDto, RoleDto, UpdateMyProfileDto, UpdateUserDto } from './dto';
 
 export interface NewLogin {
   email: string;
@@ -113,6 +113,39 @@ export class UsersService {
       after: { email: user.email, roles: user.roles.map((r) => r.role.name) },
     });
     return { ...user, roles: user.roles.map((r) => r.role), temporaryPassword };
+  }
+
+  /** Any signed-in user (platform or tenant) updating their own name, phone or avatar. */
+  async updateMe(dto: UpdateMyProfileDto) {
+    const c = ctx();
+    if (c.actorType === 'PLATFORM') {
+      const u = await this.prisma.platform.platformUser.update({
+        where: { id: c.userId },
+        data: {
+          name: dto.name?.trim() || undefined,
+          avatarUrl: dto.avatarUrl === '' ? null : dto.avatarUrl,
+        },
+      });
+      return { id: u.id, email: u.email, name: u.name, role: u.role, avatarUrl: u.avatarUrl };
+    }
+    const u = await this.prisma.db.user.update({
+      where: { id: c.userId },
+      data: {
+        firstName: dto.firstName?.trim() || undefined,
+        lastName: dto.lastName?.trim() || undefined,
+        phone: dto.phone === '' ? null : dto.phone,
+        avatarUrl: dto.avatarUrl === '' ? null : dto.avatarUrl,
+      },
+    });
+    await this.audit.log({ action: 'PROFILE_UPDATED', entity: 'User', entityId: u.id, after: dto });
+    return {
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      phone: u.phone,
+      avatarUrl: u.avatarUrl,
+    };
   }
 
   async update(id: string, dto: UpdateUserDto) {

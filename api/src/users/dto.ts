@@ -18,6 +18,19 @@ export class ListUsersDto extends PaginationDto {
   @IsOptional() @IsString() isActive?: string;
 }
 
+/**
+ * Every user type edits their own profile through this one shape. Tenant users (staff, parent,
+ * student) use firstName/lastName; a platform user has a single name field instead, so it's accepted
+ * too and the service picks whichever applies to the caller.
+ */
+export class UpdateMyProfileDto {
+  @IsOptional() @IsString() @MaxLength(60) firstName?: string;
+  @IsOptional() @IsString() @MaxLength(60) lastName?: string;
+  @IsOptional() @IsString() @MaxLength(120) name?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+  @IsOptional() @IsString() @MaxLength(2048) avatarUrl?: string;
+}
+
 export class CreateUserDto {
   @IsEmail() email: string;
   @IsString() @MaxLength(60) firstName: string;

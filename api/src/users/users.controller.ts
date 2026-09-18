@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RequirePermissions } from '../common/decorators';
-import { CreateUserDto, ListUsersDto, RoleDto, UpdateUserDto } from './dto';
+import { AllowAnyActor, RequirePermissions } from '../common/decorators';
+import { CreateUserDto, ListUsersDto, RoleDto, UpdateMyProfileDto, UpdateUserDto } from './dto';
 import { UsersService } from './users.service';
 
 @ApiTags('users')
@@ -14,6 +14,9 @@ export class UsersController {
   }
   @Post('users') @RequirePermissions('USERS_MANAGE') create(@Body() dto: CreateUserDto) {
     return this.users.create(dto);
+  }
+  @Patch('users/me') @AllowAnyActor() updateMe(@Body() dto: UpdateMyProfileDto) {
+    return this.users.updateMe(dto);
   }
   @Patch('users/:id') @RequirePermissions('USERS_MANAGE') update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.users.update(id, dto);

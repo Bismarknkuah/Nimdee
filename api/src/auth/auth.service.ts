@@ -207,7 +207,11 @@ export class AuthService {
     const c = ctx();
     if (c.actorType === 'PLATFORM') {
       const u = await this.prisma.platform.platformUser.findUnique({ where: { id: c.userId } });
-      return { type: 'PLATFORM', user: { id: u.id, email: u.email, name: u.name, role: u.role }, permissions: ['*'] };
+      return {
+        type: 'PLATFORM',
+        user: { id: u.id, email: u.email, name: u.name, role: u.role, avatarUrl: u.avatarUrl },
+        permissions: ['*'],
+      };
     }
     const db = this.prisma.db;
     const [user, snap, tenant] = await Promise.all([

@@ -38,6 +38,16 @@ export class RegisterSchoolDto {
   @IsOptional() @IsBoolean() setupStandardClasses?: boolean;
 }
 
+/**
+ * Same shape as public self-registration, but for a platform team member setting a school up on an
+ * owner's behalf: they may not know what password the owner wants, so it's optional here (a temporary
+ * one is generated and handed back, exactly like adding a staff member) — and it always activates the
+ * school immediately, skipping the pending-approval step, since the platform admin is the approver.
+ */
+export class PlatformCreateSchoolDto extends RegisterSchoolDto {
+  @IsOptional() @IsString() @MinLength(8) declare adminPassword: string;
+}
+
 export class UpdateSchoolProfileDto {
   @IsOptional() @IsString() @MinLength(3) @MaxLength(120) name?: string;
   @IsOptional() @IsString() type?: string;

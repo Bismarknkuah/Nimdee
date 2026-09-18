@@ -26,6 +26,7 @@ model PlatformUser {
   email        String       @unique
   passwordHash String
   name         String
+  avatarUrl    String?
   role         PlatformRole @default(SUPER_ADMIN)
   isActive     Boolean      @default(true)
   lastLoginAt  DateTime?

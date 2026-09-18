@@ -10,10 +10,11 @@ import { tid } from '../common/context/request-context';
 import { SYSTEM_ROLES } from '../common/permissions';
 import { ALL_FEATURES, CORE_FEATURES } from '../common/features';
 import { DEFAULT_SETTINGS, defaultWebsiteConfig, mergeSettings, validateSettings } from '../common/settings';
-import { nextSequence, pad, randomToken, slugify } from '../common/utils';
+import { nextSequence, pad, randomPassword, randomToken, slugify } from '../common/utils';
 import {
   AddDomainDto,
   RegisterSchoolDto,
+  PlatformCreateSchoolDto,
   UpdateBrandingDto,
   UpdateFeaturesDto,
   UpdateSchoolProfileDto,
@@ -33,7 +34,7 @@ export class SchoolsService {
   ) {}
 
   // ─────────────────────────── Onboarding ───────────────────────────
-  async register(dto: RegisterSchoolDto) {
+  async register(dto: RegisterSchoolDto | PlatformCreateSchoolDto, opts?: { forceApprove?: boolean }) {
     let slug = dto.slug ? dto.slug.toLowerCase() : slugify(dto.name);
     if (['www', 'api', 'app', 'admin', 'platform', 'mail'].includes(slug))
       throw new BadRequestException('That address is reserved');
@@ -47,9 +48,10 @@ export class SchoolsService {
       (await this.prisma.platform.plan.findFirst({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }));
     if (!plan) throw new BadRequestException('No subscription plans are configured yet');
     const country = (dto.country ?? 'GH').toUpperCase();
-    const autoApprove = process.env.PLATFORM_AUTO_APPROVE === 'true';
+    const autoApprove = opts?.forceApprove || process.env.PLATFORM_AUTO_APPROVE === 'true';
     const adminEmail = dto.adminEmail.trim().toLowerCase();
-    const passwordHash = await bcrypt.hash(dto.adminPassword, 10);
+    const generatedPassword = dto.adminPassword ? undefined : randomPassword();
+    const passwordHash = await bcrypt.hash(dto.adminPassword || generatedPassword!, 10);
 
     const result = await this.prisma.platformTx(async (tx) => {
       let code = '';
@@ -179,6 +181,7 @@ export class SchoolsService {
       },
       portalUrl: `https://${slug}.${ROOT_DOMAIN()}`,
       loginHint: { school: slug, email: adminEmail },
+      temporaryPassword: generatedPassword,
       message: autoApprove
         ? 'Your school is ready. Sign in to continue.'
         : 'Registration received. The platform administrator will review and approve your school shortly.',

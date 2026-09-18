@@ -45,7 +45,7 @@ import { api } from '@/lib/api';
 import { dashboardFor, useAuth } from '@/lib/auth';
 import { useOffline } from '@/lib/offline';
 import { ago } from '@/lib/format';
-import { Badge, Spinner } from '@/components/ui';
+import { Badge, Button, Field, Input, Modal, Spinner, useToast } from '@/components/ui';
 
 interface NavItem {
   href: string;
@@ -303,11 +303,107 @@ const PLATFORM_NAV: NavGroup[] = [
   },
 ];
 
+/** Self-service profile editor: name, phone and a photo URL, available to every signed-in user type. */
+function ProfileModal({
+  me,
+  isPlatform,
+  onClose,
+  onSaved,
+}: {
+  me: any;
+  isPlatform: boolean;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const toast = useToast();
+  const [f, setF] = useState<any>({
+    firstName: me.user.firstName ?? '',
+    lastName: me.user.lastName ?? '',
+    name: me.user.name ?? '',
+    phone: me.user.phone ?? '',
+    avatarUrl: me.user.avatarUrl ?? '',
+  });
+  const [busy, setBusy] = useState(false);
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.patch('/users/me', f);
+      toast.success('Profile updated');
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const initials = (isPlatform ? f.name : `${f.firstName} ${f.lastName}`)
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s: string) => s[0]?.toUpperCase())
+    .join('');
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="My profile"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={save} loading={busy}>
+            Save
+          </Button>
+        </>
+      }
+    >
+      <div className="mb-4 flex items-center gap-3">
+        {f.avatarUrl ? (
+          <img src={f.avatarUrl} alt="" className="h-14 w-14 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/10 text-lg font-semibold text-brand">
+            {initials || '?'}
+          </div>
+        )}
+        <div className="flex-1">
+          <Field label="Photo URL" hint="Paste a link to an image; leave blank to use your initials">
+            <Input
+              value={f.avatarUrl}
+              onChange={(e) => setF({ ...f, avatarUrl: e.target.value })}
+              placeholder="https://..."
+            />
+          </Field>
+        </div>
+      </div>
+      {isPlatform ? (
+        <Field label="Name">
+          <Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        </Field>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="First name">
+            <Input value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />
+          </Field>
+          <Field label="Last name">
+            <Input value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />
+          </Field>
+          <Field label="Phone" className="sm:col-span-2">
+            <Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+          </Field>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 export function AppShell({ children, mode }: { children: React.ReactNode; mode: 'school' | 'platform' }) {
-  const { me, loading, logout, can, has, role } = useAuth();
+  const { me, loading, logout, can, has, role, refresh } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const offline = useOffline();
   const [unread, setUnread] = useState(0);
 
@@ -402,17 +498,43 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
       </nav>
       <div className="border-t border-slate-100 p-3">
         <div className="flex items-center gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-slate-800">
-              {me.user.name ?? `${me.user.firstName} ${me.user.lastName}`}
-            </p>
-            <p className="truncate text-xs text-slate-500">{me.roles?.join(', ') ?? me.user.role}</p>
-          </div>
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 text-left hover:bg-slate-100"
+            title="Edit my profile"
+          >
+            {me.user.avatarUrl ? (
+              <img src={me.user.avatarUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+            ) : (
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
+                {(me.user.name ?? `${me.user.firstName ?? ''} ${me.user.lastName ?? ''}`)
+                  .split(' ')
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((s: string) => s[0]?.toUpperCase())
+                  .join('') || '?'}
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800">
+                {me.user.name ?? `${me.user.firstName} ${me.user.lastName}`}
+              </p>
+              <p className="truncate text-xs text-slate-500">{me.roles?.join(', ') ?? me.user.role}</p>
+            </div>
+          </button>
           <button onClick={logout} title="Sign out" className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100">
             <LogOut size={16} />
           </button>
         </div>
       </div>
+      {profileOpen && (
+        <ProfileModal
+          me={me}
+          isPlatform={mode === 'platform'}
+          onClose={() => setProfileOpen(false)}
+          onSaved={refresh}
+        />
+      )}
     </div>
   );
 

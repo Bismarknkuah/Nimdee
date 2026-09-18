@@ -17,7 +17,9 @@ import {
   SupportSessionDto,
   UpdateTenantDto,
 } from './dto';
+import { PlatformCreateSchoolDto } from '../schools/dto';
 import { PlatformService } from './platform.service';
+import { SchoolsService } from '../schools/schools.service';
 
 @ApiTags('platform')
 @PlatformOnly()
@@ -26,12 +28,18 @@ export class PlatformController {
   constructor(
     private readonly platform: PlatformService,
     private readonly exports: DataExportService,
+    private readonly schools: SchoolsService,
   ) {}
 
   @Get('stats') stats() {
     return this.platform.stats();
   }
-  @Get('schools') schools(@Query() q: ListSchoolsDto) {
+  @Post('schools') createSchool(@Body() dto: PlatformCreateSchoolDto) {
+    // Platform team member setting a school up on the owner's behalf: activates immediately, since
+    // the platform admin creating it is the same person who would otherwise approve it.
+    return this.schools.register(dto, { forceApprove: true });
+  }
+  @Get('schools') schools_(@Query() q: ListSchoolsDto) {
     return this.platform.listSchools(q);
   }
   @Get('schools/:id') school(@Param('id') id: string) {
