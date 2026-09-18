@@ -61,14 +61,25 @@ export class RolloverService {
       };
     });
     const studentIds = await db.student.findMany({ where: { status: 'ACTIVE' }, select: { id: true, classId: true } });
+    // A student on probation (between probationAverage and promotionAverage) still moves up a class;
+    // only a genuine repeat (below probationAverage) stays behind.
     const repeats =
       dto?.respectResults !== false
-        ? sheets.filter((s) => Number(s.average) < settings.academic.promotionAverage).length
+        ? sheets.filter((s) => Number(s.average) < settings.academic.probationAverage).length
+        : 0;
+    const probation =
+      dto?.respectResults !== false
+        ? sheets.filter(
+            (s) =>
+              Number(s.average) >= settings.academic.probationAverage &&
+              Number(s.average) < settings.academic.promotionAverage,
+          ).length
         : 0;
     return {
       currentYear: year ? { id: year.id, name: year.name, endDate: year.endDate } : null,
       lastTerm: lastTerm ? { id: lastTerm.id, name: lastTerm.name } : null,
       promotionAverage: settings.academic.promotionAverage,
+      probationAverage: settings.academic.probationAverage,
       plan,
       totals: {
         students: studentIds.length,
@@ -76,6 +87,7 @@ export class RolloverService {
         graduate: plan.filter((p) => p.action === 'GRADUATE').reduce((a, p) => a + p.students, 0),
         stay: plan.filter((p) => p.action === 'STAY').reduce((a, p) => a + p.students, 0),
         repeatByResults: repeats,
+        probationByResults: probation,
       },
       suggestedNextYear: year ? this.nextYearName(year.name) : null,
     };
@@ -99,8 +111,10 @@ export class RolloverService {
       lastTerm && dto.respectResults !== false
         ? await db.resultSheet.findMany({ where: { termId: lastTerm.id }, select: { studentId: true, average: true } })
         : [];
+    // Only a genuine repeat (below probationAverage) stays behind; a student on probation
+    // (between probationAverage and promotionAverage) still moves up with everyone else.
     const below = new Set(
-      sheets.filter((s) => Number(s.average) < settings.academic.promotionAverage).map((s) => s.studentId),
+      sheets.filter((s) => Number(s.average) < settings.academic.probationAverage).map((s) => s.studentId),
     );
     const result = await this.prisma.tenantTx(async (tx) => {
       await tx.academicYear.updateMany({ where: { tenantId }, data: { isCurrent: false } });

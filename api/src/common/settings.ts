@@ -14,6 +14,9 @@ export interface SchoolSettings {
     gradingScheme: GradeBand[];
     passMark: number;
     promotionAverage: number;
+    /** Below this average a student repeats the year outright; between this and promotionAverage they
+     *  move up but are flagged PROMOTED ON PROBATION for the receiving teacher to watch closely. */
+    probationAverage: number;
     caWeight: number;
     examWeight: number;
     resultApprovalLevels: Array<'REVIEW' | 'APPROVE'>;
@@ -55,6 +58,8 @@ export interface SchoolSettings {
     defaultDailyLimit: number;
     allowNegativeStock: boolean;
     /** Plan types the school offers to parents in the portal */ selfServicePlans: boolean;
+    /** Class IDs that do not take part in school feeding (e.g. a boarding-only or off-site class) */
+    exemptClassIds: string[];
   };
   communication: {
     smsSenderId?: string;
@@ -71,6 +76,7 @@ export const DEFAULT_SETTINGS: SchoolSettings = {
     gradingSchemes: { KG: PRIMARY_GRADING, PRIMARY: PRIMARY_GRADING, JHS: JHS_GRADING },
     passMark: 50,
     promotionAverage: 50,
+    probationAverage: 40,
     caWeight: 50,
     examWeight: 50,
     resultApprovalLevels: ['REVIEW', 'APPROVE'],
@@ -97,7 +103,7 @@ export const DEFAULT_SETTINGS: SchoolSettings = {
     paymentProvider: 'NONE',
   },
   sync: { conflictPolicy: 'LATEST_WINS', attendanceWindowDays: 45 },
-  canteen: { defaultDailyLimit: 0, allowNegativeStock: false, selfServicePlans: true },
+  canteen: { defaultDailyLimit: 0, allowNegativeStock: false, selfServicePlans: true, exemptClassIds: [] },
   communication: { announcementChannels: ['IN_APP'], smsEnabled: true, emailEnabled: true, feeReminderDaysBefore: 3 },
 };
 
@@ -209,6 +215,8 @@ export function validateSettings(s: any) {
   const a = s.academic;
   if (Math.round(Number(a.caWeight) + Number(a.examWeight)) !== 100)
     throw new Error('CA weight and Exam weight must add up to 100');
+  if (Number(a.probationAverage) > Number(a.promotionAverage))
+    throw new Error('Probation average cannot be higher than the promotion average');
   if (!Array.isArray(a.gradingScheme) || !a.gradingScheme.length)
     throw new Error('Grading scheme must have at least one band');
   for (const b of a.gradingScheme) {

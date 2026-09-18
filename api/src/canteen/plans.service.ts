@@ -247,6 +247,18 @@ export class CanteenPlansService {
     const tenantId = tid();
     const plan = await this.prisma.db.canteenPlan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) throw new NotFoundException('Plan not found or inactive');
+    if (dto.classId) {
+      const settings = await this.tenants.settings(tenantId);
+      if (settings.canteen.exemptClassIds?.includes(dto.classId)) {
+        const exemptClass = await this.prisma.db.schoolClass.findUnique({
+          where: { id: dto.classId },
+          select: { name: true },
+        });
+        throw new BadRequestException(
+          `${exemptClass?.name ?? 'This class'} is exempt from school feeding. Change that under Settings > Rules engine if that's not right.`,
+        );
+      }
+    }
     let studentIds = dto.studentIds ?? [];
     if (dto.classId)
       studentIds = [

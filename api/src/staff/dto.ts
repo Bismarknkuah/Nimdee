@@ -1,4 +1,4 @@
-import { IsBoolean, IsDateString, IsEmail, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsEnum, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { PaginationDto } from '../common/dto/pagination.dto';
 
 export class ListStaffDto extends PaginationDto {
@@ -22,6 +22,8 @@ export class CreateStaffDto {
   /** Create a portal login immediately (requires email). Teachers get the Teacher role. */
   @IsOptional() @IsBoolean() createLogin?: boolean;
   @IsOptional() @IsString() roleName?: string;
+  /** Set a specific temporary password instead of letting the system generate one */
+  @IsOptional() @IsString() @MinLength(8) @MaxLength(72) password?: string;
 }
 
 export class UpdateStaffDto {

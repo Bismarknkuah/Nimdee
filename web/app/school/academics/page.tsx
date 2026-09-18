@@ -37,6 +37,48 @@ export default function AcademicsPage() {
   const [f, setF] = useState<any>({});
   const [busy, setBusy] = useState(false);
   const manage = can('ACADEMIC_MANAGE');
+  const [preview, setPreview] = useState<any>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [respectResults, setRespectResults] = useState(true);
+  const [yearForm, setYearForm] = useState<any>({
+    newYearName: '',
+    startDate: '',
+    endDate: '',
+    terms: [
+      { name: 'Term 1', startDate: '', endDate: '' },
+      { name: 'Term 2', startDate: '', endDate: '' },
+      { name: 'Term 3', startDate: '', endDate: '' },
+    ],
+  });
+  const runPreview = async () => {
+    setPreviewing(true);
+    try {
+      const p = await api.post('/academic/rollover/preview', { respectResults });
+      setPreview(p);
+      if (p.suggestedNextYear) setYearForm((f: any) => ({ ...f, newYearName: f.newYearName || p.suggestedNextYear }));
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setPreviewing(false);
+    }
+  };
+  const commitRollover = async () => {
+    if (!confirm('This starts a new academic year and moves every class up. This cannot be undone. Continue?'))
+      return;
+    setCommitting(true);
+    try {
+      await api.post('/academic/rollover', { ...yearForm, respectResults });
+      toast.success('New academic year started');
+      setPreview(null);
+      years.reload();
+      classes.reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setCommitting(false);
+    }
+  };
   const set = (k: string) => (e: any) =>
     setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const submit = async () => {
@@ -134,6 +176,7 @@ export default function AcademicsPage() {
           { id: 'subjects', label: 'Subjects', count: subjects.data?.length },
           { id: 'years', label: 'Years & terms' },
           { id: 'rooms', label: 'Rooms', count: rooms.data?.length },
+          { id: 'promotion', label: 'Year-end promotion' },
         ]}
       />
       {tab === 'classes' && (
@@ -329,6 +372,125 @@ export default function AcademicsPage() {
             ]}
           />
         </>
+      )}
+      {tab === 'promotion' && (
+        <div className="space-y-4">
+          <Card title="Preview this year's promotion">
+            <p className="mb-3 text-sm text-slate-500">
+              Uses the last term's results against the promotion and probation averages set in Settings
+              &gt; Rules engine. Nothing is written until you start the new year below.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Checkbox
+                label="Base promotion on results (uncheck to promote everyone regardless of marks)"
+                checked={respectResults}
+                onChange={(e) => setRespectResults(e.target.checked)}
+              />
+              <Button onClick={runPreview} loading={previewing}>
+                Preview
+              </Button>
+            </div>
+          </Card>
+          {preview && (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <Card title="Students" className="text-center">
+                  <p className="text-2xl font-bold text-slate-800">{preview.totals.students}</p>
+                </Card>
+                <Card title="Promoted" className="text-center">
+                  <p className="text-2xl font-bold text-emerald-600">{preview.totals.promote}</p>
+                </Card>
+                <Card title="On probation" className="text-center">
+                  <p className="text-2xl font-bold text-amber-600">{preview.totals.probationByResults}</p>
+                </Card>
+                <Card title="Repeat" className="text-center">
+                  <p className="text-2xl font-bold text-red-600">{preview.totals.repeatByResults}</p>
+                </Card>
+                <Card title="Graduating" className="text-center">
+                  <p className="text-2xl font-bold text-brand">{preview.totals.graduate}</p>
+                </Card>
+              </div>
+              <Card title="Per class" padded={false}>
+                <DataTable
+                  rows={preview.plan}
+                  columns={[
+                    { key: 'fromClass', header: 'Class' },
+                    { key: 'students', header: 'Students', align: 'right' },
+                    { key: 'action', header: 'Action', render: (p: any) => <Badge>{p.action}</Badge> },
+                    { key: 'toClass', header: 'Moves to', render: (p: any) => p.toClass ?? '\u2014' },
+                  ]}
+                />
+              </Card>
+              <Card title="Start the new academic year">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label="New year name" hint="e.g. 2027/2028">
+                    <Input
+                      value={yearForm.newYearName}
+                      onChange={(e) => setYearForm({ ...yearForm, newYearName: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="Start date">
+                    <Input
+                      type="date"
+                      value={yearForm.startDate}
+                      onChange={(e) => setYearForm({ ...yearForm, startDate: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="End date">
+                    <Input
+                      type="date"
+                      value={yearForm.endDate}
+                      onChange={(e) => setYearForm({ ...yearForm, endDate: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <p className="mt-3 mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Terms</p>
+                <div className="space-y-2">
+                  {yearForm.terms.map((t: any, i: number) => (
+                    <div key={i} className="grid gap-2 sm:grid-cols-3">
+                      <Input
+                        value={t.name}
+                        placeholder="Term name"
+                        onChange={(e) => {
+                          const terms = [...yearForm.terms];
+                          terms[i] = { ...terms[i], name: e.target.value };
+                          setYearForm({ ...yearForm, terms });
+                        }}
+                      />
+                      <Input
+                        type="date"
+                        value={t.startDate}
+                        onChange={(e) => {
+                          const terms = [...yearForm.terms];
+                          terms[i] = { ...terms[i], startDate: e.target.value };
+                          setYearForm({ ...yearForm, terms });
+                        }}
+                      />
+                      <Input
+                        type="date"
+                        value={t.endDate}
+                        onChange={(e) => {
+                          const terms = [...yearForm.terms];
+                          terms[i] = { ...terms[i], endDate: e.target.value };
+                          setYearForm({ ...yearForm, terms });
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {can('SCHOOL_MANAGE') ? (
+                  <Button className="mt-4" onClick={commitRollover} loading={committing}>
+                    Start new year &amp; promote students
+                  </Button>
+                ) : (
+                  <p className="mt-4 text-sm text-slate-500">
+                    Starting the new year needs the School Admin's sign-off.
+                  </p>
+                )}
+              </Card>
+            </>
+          )}
+        </div>
       )}
       <Modal
         open={!!modal}

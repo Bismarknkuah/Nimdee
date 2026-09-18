@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Users } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useApi } from '@/lib/hooks';
@@ -9,6 +9,7 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   DataTable,
   Field,
   Input,
@@ -153,6 +154,9 @@ function PlanModal({ plan, onClose, onSaved }: { plan: any; onClose: () => void;
 function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void; onDone: () => void }) {
   const toast = useToast();
   const { data: classes } = useApi<any[]>('/academic/classes');
+  const { data: settings } = useApi<any>('/school/settings');
+  const exemptIds: string[] = settings?.canteen?.exemptClassIds ?? [];
+  const eligibleClasses = (classes ?? []).filter((c: any) => !exemptIds.includes(c.id));
   const [busy, setBusy] = useState(false);
   const [classId, setClassId] = useState('');
   const [bill, setBill] = useState(plan.billToFees ? 'FEES' : 'WALLET');
@@ -187,10 +191,17 @@ function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void;
       }
     >
       <div className="space-y-3">
-        <Field label="Class" hint="Every active student in this class joins the plan today">
+        <Field
+          label="Class"
+          hint={
+            exemptIds.length
+              ? "Every active student in this class joins the plan today. Classes exempt from feeding aren't listed."
+              : 'Every active student in this class joins the plan today'
+          }
+        >
           <Select
             placeholder="Choose a class"
-            options={(classes ?? []).map((c: any) => ({ value: c.id, label: `${c.name} (${title(c.level)})` }))}
+            options={eligibleClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${title(c.level)})` }))}
             value={classId}
             onChange={(e) => setClassId(e.target.value)}
           />
@@ -209,6 +220,60 @@ function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void;
         )}
       </div>
     </Modal>
+  );
+}
+
+function ExemptClassesCard() {
+  const toast = useToast();
+  const { can } = useAuth();
+  const { data: classes } = useApi<any[]>('/academic/classes');
+  const { data: settings, reload } = useApi<any>('/school/settings');
+  const [selected, setSelected] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (settings) setSelected(settings.canteen.exemptClassIds ?? []);
+  }, [settings]);
+  if (!settings || selected === null) return null;
+  const toggle = (id: string) =>
+    setSelected((prev) => (prev!.includes(id) ? prev!.filter((x) => x !== id) : [...prev!, id]));
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.patch('/school/settings', { canteen: { exemptClassIds: selected } });
+      toast.success('Exempt classes updated');
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card
+      title="Classes exempt from school feeding"
+      actions={
+        can('SETTINGS_MANAGE') && (
+          <Button onClick={save} loading={busy}>
+            Save
+          </Button>
+        )
+      }
+    >
+      <p className="mb-3 text-sm text-slate-500">
+        Every student pays for school feeding by default. Tick any class that does not take part (for
+        example a class that brings its own food); they won't appear when enrolling a class into a plan.
+      </p>
+      <div className="grid gap-1 sm:grid-cols-3">
+        {(classes ?? []).map((c: any) => (
+          <Checkbox
+            key={c.id}
+            label={`${c.name} (${title(c.level)})`}
+            checked={selected.includes(c.id)}
+            onChange={() => toggle(c.id)}
+          />
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -232,6 +297,9 @@ export default function CanteenPlansPage() {
           )
         }
       />
+      <div className="mb-4">
+        <ExemptClassesCard />
+      </div>
       <Card padded={false}>
         <DataTable
           columns={[

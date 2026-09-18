@@ -26,8 +26,8 @@ export class StaffController {
   }
   @Post(':id/login') @RequirePermissions('USERS_MANAGE') login(
     @Param('id') id: string,
-    @Body() body: { roleName?: string; email?: string },
+    @Body() body: { roleName?: string; email?: string; password?: string },
   ) {
-    return this.staff.createLogin(id, body?.roleName, body?.email);
+    return this.staff.createLogin(id, body?.roleName, body?.email, body?.password);
   }
 }

@@ -179,8 +179,7 @@ function UsersTab() {
             <Field label="Email" className="sm:col-span-2">
               <Input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
             </Field>
-          )}
-          <Field label="First name">
+          )}          <Field label="First name">
             <Input value={f.firstName ?? ''} onChange={(e) => setF({ ...f, firstName: e.target.value })} />
           </Field>
           <Field label="Last name">
@@ -189,6 +188,16 @@ function UsersTab() {
           <Field label="Phone">
             <Input value={f.phone ?? ''} onChange={(e) => setF({ ...f, phone: e.target.value })} />
           </Field>
+          {!modal?.id && (
+            <Field label="Temporary password" hint="Leave blank to auto-generate one, shown once on save">
+              <Input
+                type="text"
+                value={f.password ?? ''}
+                onChange={(e) => setF({ ...f, password: e.target.value })}
+                placeholder="Auto-generated"
+              />
+            </Field>
+          )}
           {!modal?.id ? (
             <Field label="User type">
               <Select

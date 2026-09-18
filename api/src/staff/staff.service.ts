@@ -114,6 +114,7 @@ export class StaffService {
           phone: dto.phone,
           userType: isTeacher ? 'TEACHER' : 'STAFF',
           roleNames: [dto.roleName ?? (isTeacher ? 'Teacher' : 'School Admin')],
+          password: dto.password,
         });
         await tx.staff.update({ where: { id: staff.id }, data: { userId: user.id } });
         login = { email: user.email, temporaryPassword };
@@ -147,7 +148,7 @@ export class StaffService {
     return s;
   }
 
-  async createLogin(id: string, roleName?: string, email?: string) {
+  async createLogin(id: string, roleName?: string, email?: string, password?: string) {
     const s = await this.prisma.db.staff.findUnique({ where: { id } });
     if (!s) throw new NotFoundException('Staff member not found');
     if (s.userId) throw new BadRequestException('Staff member already has a login');
@@ -161,6 +162,7 @@ export class StaffService {
       phone: s.phone,
       userType: isTeacher ? 'TEACHER' : 'STAFF',
       roleNames: [roleName ?? (isTeacher ? 'Teacher' : 'School Admin')],
+      password,
     });
     await this.prisma.db.staff.update({ where: { id }, data: { userId: user.id, email: loginEmail } });
     await this.audit.log({

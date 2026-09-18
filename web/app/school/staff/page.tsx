@@ -202,6 +202,14 @@ export default function StaffPage() {
               disabled={!f.createLogin}
             />
           </Field>
+          <Field label="Temporary password" hint="Leave blank to auto-generate one, shown once on save">
+            <Input
+              value={f.password ?? ''}
+              onChange={set('password')}
+              disabled={!f.createLogin}
+              placeholder="Auto-generated"
+            />
+          </Field>
         </div>
         <div className="mt-3">
           <Checkbox

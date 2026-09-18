@@ -330,8 +330,18 @@ function RulesTab() {
           <Field label="Pass mark (%)">
             <Input type="number" value={s.academic.passMark} onChange={num('academic', 'passMark')} />
           </Field>
-          <Field label="Promotion average (%)">
+          <Field label="Promotion average (%)" hint="At or above this, a student is promoted outright">
             <Input type="number" value={s.academic.promotionAverage} onChange={num('academic', 'promotionAverage')} />
+          </Field>
+          <Field
+            label="Probation average (%)"
+            hint="Between this and the promotion average, a student still moves up but is flagged for the new teacher to watch. Below this, they repeat the year."
+          >
+            <Input
+              type="number"
+              value={s.academic.probationAverage}
+              onChange={num('academic', 'probationAverage')}
+            />
           </Field>
         </div>
         <div className="mt-3 flex flex-wrap gap-4">

@@ -176,7 +176,7 @@ export class ResultsService {
     const db = this.prisma.db;
     const tenantId = tid();
     const settings = await this.tenants.settings(tenantId);
-    const { caWeight, examWeight, promotionAverage, passMark } = settings.academic;
+    const { caWeight, examWeight, promotionAverage, probationAverage, passMark } = settings.academic;
     const cls = await db.schoolClass.findUnique({ where: { id: dto.classId }, select: { level: true } });
     if (!cls) throw new NotFoundException('Class not found');
     // KG/Primary and JHS use different grade bands (letters vs BECE 1–9) — see Settings → Rules engine.
@@ -306,7 +306,9 @@ export class ResultsService {
           : finalTerm
             ? sh.average >= promotionAverage
               ? 'PROMOTED'
-              : 'NOT PROMOTED'
+              : sh.average >= probationAverage
+                ? 'PROMOTED ON PROBATION'
+                : 'REPEAT'
             : sh.average >= passMark
               ? 'ON TRACK'
               : 'AT RISK';
