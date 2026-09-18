@@ -320,6 +320,70 @@ export class CanteenService {
     });
   }
 
+  /**
+   * Marks a meal-plan student as having eaten today, no menu items or price involved. The plan's fee
+   * was already collected up front (an invoice or a wallet debit at enrolment), so this is attendance,
+   * not a sale: it reuses CanteenSale purely so the existing mealsUsedToday count in plans.service.ts
+   * (which already sums CanteenSale.mealCount for today) sees it and stops the same student checking in
+   * twice for a one-meal-a-day plan.
+   */
+  async checkIn(studentId: string) {
+    const tenantId = tid();
+    const active = await this.plans.activePlanFor(this.prisma.db, studentId);
+    if (!active || active.plan.type !== 'MEAL_PLAN')
+      throw new BadRequestException('This student has no active meal plan');
+    const remaining = active.plan.mealsPerDay - active.mealsUsedToday;
+    if (remaining <= 0)
+      throw new BadRequestException(`Already checked in for all ${active.plan.mealsPerDay} meal(s) today`);
+    const s = await this.prisma.db.canteenSale.create({
+      data: {
+        tenantId,
+        studentId,
+        cashierId: ctx().userId,
+        items: [],
+        total: zero(),
+        coveredAmount: zero(),
+        mealCount: 1,
+        planId: active.plan.id,
+        paymentMode: 'MEAL_PLAN',
+      },
+    });
+    return { checkedIn: true, planName: active.plan.name, remainingToday: remaining - 1, saleId: s.id };
+  }
+
+  /** Today's meal-plan roster for the check-in screen, optionally scoped to one class. */
+  async mealPlanRoster(classId?: string) {
+    const today = startOfToday();
+    const enrolments = await this.prisma.db.studentCanteenPlan.findMany({
+      where: {
+        status: 'ACTIVE',
+        plan: { type: 'MEAL_PLAN' },
+        startDate: { lte: today },
+        OR: [{ endDate: null }, { endDate: { gte: today } }],
+        ...(classId ? { student: { classId } } : {}),
+      },
+      include: {
+        student: { select: { id: true, studentId: true, firstName: true, lastName: true, class: { select: { id: true, name: true } }, photoUrl: true } },
+        plan: { select: { id: true, name: true, mealsPerDay: true } },
+      },
+      orderBy: [{ student: { firstName: 'asc' } }],
+    });
+    const checkedIn = await this.prisma.db.canteenSale.groupBy({
+      by: ['studentId'],
+      where: { createdAt: { gte: today }, studentId: { in: enrolments.map((e) => e.studentId) } },
+      _sum: { mealCount: true },
+    });
+    const usedMap = new Map(checkedIn.map((c) => [c.studentId, c._sum.mealCount ?? 0]));
+    return enrolments.map((e) => ({
+      studentId: e.student.id,
+      student: e.student,
+      planName: e.plan.name,
+      mealsPerDay: e.plan.mealsPerDay,
+      mealsUsedToday: usedMap.get(e.studentId) ?? 0,
+      checkedIn: (usedMap.get(e.studentId) ?? 0) >= e.plan.mealsPerDay,
+    }));
+  }
+
   async summary(date?: string) {
     const day = date ? toDateOnly(date) : startOfToday();
     const db = this.prisma.db;

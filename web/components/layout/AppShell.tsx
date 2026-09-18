@@ -8,6 +8,7 @@ import {
   Building2,
   Bus,
   CalendarDays,
+  ChevronDown,
   ClipboardCheck,
   ClipboardList,
   CreditCard,
@@ -30,9 +31,11 @@ import {
   UserPlus,
   Users,
   UsersRound,
+  Utensils,
   Wallet,
   WifiOff,
   X,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -156,6 +159,20 @@ const SCHOOL_NAV: NavGroup[] = [
         perms: ['CANTEEN_VIEW', 'CANTEEN_SELL'],
         feature: 'CANTEEN',
       },
+      {
+        href: '/school/canteen/checkin',
+        label: 'Meal check-in',
+        icon: Utensils,
+        perms: ['CANTEEN_VIEW', 'CANTEEN_SELL'],
+        feature: 'CANTEEN',
+      },
+      {
+        href: '/school/canteen/plans',
+        label: 'Meal plans',
+        icon: ClipboardList,
+        perms: ['CANTEEN_MANAGE'],
+        feature: 'CANTEEN',
+      },
       { href: '/school/inventory', label: 'Inventory', icon: Package, perms: ['INVENTORY_VIEW'], feature: 'INVENTORY' },
     ],
   },
@@ -204,6 +221,68 @@ const PORTAL_NAV: NavGroup[] = [
       { href: '/school/portal/notifications', label: 'Notifications', icon: Bell },
     ],
   },
+];
+/**
+ * One flat, permission- and feature-aware list of shortcuts for every role, shown from the header
+ * quick-actions menu on every page (not just the dashboard). The same can()/has() filter used for the
+ * sidebar naturally scopes this down to what each role can actually do, so it needs no per-role branching:
+ * a teacher sees "Mark attendance" and "Enter marks", a cashier sees "Canteen sale", a parent or student
+ * sees only "Messages" and "Calendar" since they hold none of the staff permissions below.
+ */
+const QUICK_LINKS: NavItem[] = [
+  { href: '/school/students/new', label: 'Enrol student', icon: UserPlus, perms: ['STUDENT_CREATE'] },
+  { href: '/school/attendance', label: 'Mark attendance', icon: ClipboardCheck, feature: 'ATTENDANCE' },
+  {
+    href: '/school/fees/payments/new',
+    label: 'Record payment',
+    icon: Wallet,
+    perms: ['PAYMENT_RECORD'],
+    feature: 'FEES',
+  },
+  { href: '/school/results', label: 'Enter marks', icon: FileBarChart, perms: ['RESULT_ENTER'], feature: 'RESULTS' },
+  {
+    href: '/school/assignments',
+    label: 'New homework',
+    icon: ClipboardList,
+    perms: ['ASSIGNMENTS_MANAGE'],
+    feature: 'ASSIGNMENTS',
+  },
+  {
+    href: '/school/announcements',
+    label: 'Announce',
+    icon: Megaphone,
+    perms: ['MESSAGES_SEND'],
+    feature: 'COMMUNICATIONS',
+  },
+  {
+    href: '/school/discipline',
+    label: 'Log incident',
+    icon: Scale,
+    perms: ['DISCIPLINE_MANAGE'],
+    feature: 'DISCIPLINE',
+  },
+  { href: '/school/messages', label: 'Messages', icon: MessageSquare, feature: 'MESSAGING' },
+  { href: '/school/events', label: 'Calendar', icon: CalendarDays, feature: 'EVENTS' },
+  { href: '/school/hr', label: 'Leave & payroll', icon: Briefcase, perms: ['HR_MANAGE', 'LEAVE_REQUEST'], feature: 'HR' },
+  {
+    href: '/school/canteen/checkin',
+    label: 'Meal check-in',
+    icon: Utensils,
+    perms: ['CANTEEN_SELL'],
+    feature: 'CANTEEN',
+  },
+  {
+    href: '/school/canteen',
+    label: 'Canteen sale',
+    icon: ShoppingBasket,
+    perms: ['CANTEEN_SELL'],
+    feature: 'CANTEEN',
+  },
+  { href: '/school/canteen/wallets', label: 'Wallet top-up', icon: Wallet, perms: ['WALLET_TOPUP'] },
+  { href: '/school/library', label: 'Library', icon: BookMarked, perms: ['LIBRARY_VIEW'], feature: 'LIBRARY' },
+  { href: '/school/health', label: 'Clinic', icon: HeartPulse, perms: ['HEALTH_VIEW'], feature: 'HEALTH' },
+  { href: '/school/staff', label: 'Staff', icon: Users, perms: ['STAFF_VIEW'] },
+  { href: '/school/settings?tab=data', label: 'Backup data', icon: RefreshCw, perms: ['SCHOOL_MANAGE'] },
 ];
 const PLATFORM_NAV: NavGroup[] = [
   {
@@ -261,6 +340,11 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
       items: g.items.filter((i) => (!i.perms || can(...i.perms)) && (!i.feature || has(i.feature))),
     })).filter((g) => g.items.length);
   }, [mode, role, can, has]);
+  const quickLinks = useMemo(
+    () => QUICK_LINKS.filter((i) => (!i.perms || can(...i.perms)) && (!i.feature || has(i.feature))),
+    [can, has],
+  );
+  const [quickOpen, setQuickOpen] = useState(false);
 
   if (loading || !me) return <Spinner className="h-screen" />;
   const tenant = me.tenant;
@@ -352,6 +436,36 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
             <Menu size={20} />
           </button>
           <div className="flex-1" />
+          {mode === 'school' && quickLinks.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setQuickOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand-dark hover:bg-brand-soft/80"
+              >
+                <Zap size={14} />
+                Quick actions
+                <ChevronDown size={13} className={clsx('transition-transform', quickOpen && 'rotate-180')} />
+              </button>
+              {quickOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setQuickOpen(false)} />
+                  <div className="absolute right-0 z-50 mt-2 grid w-64 grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+                    {quickLinks.map((q) => (
+                      <Link
+                        key={q.href}
+                        href={q.href}
+                        onClick={() => setQuickOpen(false)}
+                        className="flex flex-col items-center gap-1.5 rounded-lg p-2.5 text-center text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+                      >
+                        <q.icon size={18} className="text-brand" />
+                        {q.label}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           {mode === 'school' && has('OFFLINE_SYNC') && (
             <button
               onClick={() => offline.sync()}

@@ -1006,6 +1006,7 @@ enum WalletTxType {
   REFUND
   ADJUSTMENT
   ALLOWANCE
+  SUBSCRIPTION
 }
 
 model WalletTransaction {

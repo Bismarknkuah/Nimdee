@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RequireFeature, RequirePermissions } from '../common/decorators';
+import { RequireAnyPermission, RequireFeature, RequirePermissions } from '../common/decorators';
 import { CanteenService } from './canteen.service';
 import { CanteenItemDto, SaleDto, StockDto, TopUpDto, WalletSettingsDto } from './dto';
 
@@ -56,5 +56,12 @@ export class CanteenController {
   }
   @Get('summary') @RequirePermissions('CANTEEN_VIEW') summary(@Query('date') date?: string) {
     return this.canteen.summary(date);
+  }
+
+  @Get('checkin/roster') @RequireAnyPermission('CANTEEN_VIEW', 'CANTEEN_SELL') roster(@Query('classId') classId?: string) {
+    return this.canteen.mealPlanRoster(classId);
+  }
+  @Post('checkin/:studentId') @RequirePermissions('CANTEEN_SELL') checkIn(@Param('studentId') studentId: string) {
+    return this.canteen.checkIn(studentId);
   }
 }

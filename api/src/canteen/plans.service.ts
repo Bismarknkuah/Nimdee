@@ -6,7 +6,7 @@ import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { FeesService } from '../fees/fees.service';
 import { ctx, requestContext, tid } from '../common/context/request-context';
 import { addDays, money, startOfToday, toDateOnly, zero } from '../common/utils';
-import { allowanceDue } from './plan-rules';
+import { allowanceDue, walletCanPay } from './plan-rules';
 import { CanteenPlanDto, EnrolDto, EnrolmentQueryDto } from './plans.dto';
 
 export interface ActivePlan {
@@ -302,6 +302,36 @@ export class CanteenPlansService {
               ],
             });
             invoiceId = inv.id;
+            billed++;
+          }
+          let walletCharged = false;
+          if (!bill && Number(plan.price) > 0) {
+            // School has chosen to charge this plan against the canteen wallet instead of an invoice:
+            // one lump-sum debit now for the whole billing period, rather than billing through Fees.
+            const price = money(plan.price);
+            await tx.wallet.upsert({
+              where: { studentId },
+              create: { tenantId, studentId },
+              update: {},
+            });
+            await tx.$queryRaw`SELECT "id" FROM "Wallet" WHERE "studentId" = ${studentId} FOR UPDATE`;
+            const w = await tx.wallet.findUnique({ where: { studentId } });
+            const creditLimit = plan.type === 'CREDIT' ? Number(w.creditLimit ?? plan.creditLimit ?? 0) || null : null;
+            const canPay = walletCanPay(Number(w.balance), Number(price), creditLimit, w.isActive);
+            if (!canPay.ok) throw new Error(canPay.reason);
+            const balanceAfter = money(w.balance.minus(price));
+            await tx.wallet.update({ where: { id: w.id }, data: { balance: balanceAfter } });
+            await tx.walletTransaction.create({
+              data: {
+                tenantId,
+                walletId: w.id,
+                type: 'SUBSCRIPTION',
+                amount: price,
+                balanceAfter,
+                reference: `${plan.name} (${plan.billingPeriod.toLowerCase()})`,
+                byId: ctx().userId,
+              },
+            });
             billed++;
           }
           await tx.studentCanteenPlan.create({
