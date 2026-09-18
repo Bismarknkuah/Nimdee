@@ -1,7 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AllowInactiveTenant, RequireFeature, RequirePermissions } from '../common/decorators';
-import { AddDomainDto, UpdateBrandingDto, UpdateSchoolProfileDto, UpdateSettingsDto, WebsiteConfigDto } from './dto';
+import {
+  AddDomainDto,
+  UpdateBrandingDto,
+  UpdateFeaturesDto,
+  UpdateSchoolProfileDto,
+  UpdateSettingsDto,
+  WebsiteConfigDto,
+} from './dto';
 import { SchoolsService } from './schools.service';
 
 @ApiTags('school')
@@ -19,6 +26,13 @@ export class SchoolsController {
   }
   @Patch('branding') @RequirePermissions('SCHOOL_MANAGE') updateBranding(@Body() dto: UpdateBrandingDto) {
     return this.schools.updateBranding(dto);
+  }
+
+  @Get('features') @RequirePermissions('SCHOOL_MANAGE') getFeatures() {
+    return this.schools.getFeatureSettings();
+  }
+  @Patch('features') @RequirePermissions('SCHOOL_MANAGE') updateFeatures(@Body() dto: UpdateFeaturesDto) {
+    return this.schools.updateFeatureSettings(dto);
   }
 
   @Get('settings') @RequirePermissions('SETTINGS_MANAGE') settings() {

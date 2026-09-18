@@ -1054,6 +1054,110 @@ function DataTab() {
   );
 }
 
+const FEATURE_INFO: Record<string, { label: string; hint: string }> = {
+  ACADEMICS: { label: 'Academics', hint: 'Classes, subjects and the academic structure' },
+  ATTENDANCE: { label: 'Attendance', hint: 'Daily attendance marking, offline-first' },
+  OFFLINE_SYNC: { label: 'Offline sync', hint: 'Devices keep working without internet and sync later' },
+  FEES: { label: 'Fees & payments', hint: 'Invoices, installments and Mobile Money/card payments' },
+  RESULTS: { label: 'Results', hint: 'Assessments, computed grades and report cards' },
+  TIMETABLE: { label: 'Timetable', hint: 'Class and teacher timetables' },
+  CANTEEN: { label: 'Canteen', hint: 'Canteen point of sale, wallets and meal plans' },
+  PARENT_PORTAL: { label: 'Parent portal', hint: 'The app and website view parents use' },
+  WEBSITE: { label: 'School website', hint: 'Your branded public website and online admissions' },
+  CUSTOM_DOMAIN: { label: 'Custom domain', hint: 'Use your own domain for the school website' },
+  COMMUNICATIONS: { label: 'Announcements & messages', hint: 'Announcements and direct messaging' },
+  INVENTORY: { label: 'Inventory', hint: 'Stock and asset tracking' },
+  ANALYTICS: { label: 'Analytics', hint: 'Deeper reports and trend charts' },
+  DISCIPLINE: { label: 'Discipline', hint: 'Incidents, sanctions and demerit points' },
+  EVENTS: { label: 'Calendar & events', hint: 'Holidays, exams, meetings and trips' },
+  ASSIGNMENTS: { label: 'Homework & assignments', hint: 'Assignments teachers set and grade' },
+  LIBRARY: { label: 'Library', hint: 'Book catalogue and loans' },
+  TRANSPORT: { label: 'Transport', hint: 'Routes, vehicles and student transport assignments' },
+  HEALTH: { label: 'Health & clinic', hint: 'Sick-bay visits, allergies and conditions' },
+  MESSAGING: { label: 'Messaging', hint: 'In-app conversations between staff, parents and students' },
+  HR: { label: 'HR & payroll', hint: 'Staff leave, payroll and HR records' },
+};
+
+/**
+ * Lets a school's own admins hide features their plan includes from every user at the school, without
+ * needing the platform owner involved. Academics and Attendance are always on since the rest of the
+ * app depends on them.
+ */
+function FeaturesTab() {
+  const toast = useToast();
+  const { refresh } = useAuth();
+  const { data, loading, reload } = useApi('/school/features');
+  const [disabled, setDisabled] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (data) setDisabled(data.disabledFeatures);
+  }, [data]);
+  if (loading || !data || disabled === null) return <Spinner />;
+  const toggle = (f: string) =>
+    setDisabled((prev) => (prev!.includes(f) ? prev!.filter((x) => x !== f) : [...prev!, f]));
+  const save = async () => {
+    setBusy(true);
+    try {
+      await api.patch('/school/features', { disabledFeatures: disabled });
+      toast.success('Features updated');
+      await refresh();
+      reload();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card
+      title="Features shown to your school"
+      actions={
+        <Button onClick={save} loading={busy}>
+          Save changes
+        </Button>
+      }
+    >
+      <p className="mb-4 text-sm text-slate-500">
+        Turn off anything your school does not use. Hidden features disappear from navigation and
+        dashboards for every admin, teacher, staff member and parent, not just you.
+      </p>
+      <div className="grid gap-1 sm:grid-cols-2">
+        {data.locked.map((f: string) => (
+          <div key={f} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-400">
+            <input type="checkbox" checked disabled className="h-4 w-4 rounded border-slate-200" />
+            <span className="font-medium">{FEATURE_INFO[f]?.label ?? title(f)}</span>
+            <span className="text-xs">(always on)</span>
+          </div>
+        ))}
+        {data.planFeatures
+          .filter((f: string) => !data.locked.includes(f))
+          .map((f: string) => (
+            <label
+              key={f}
+              className="flex cursor-pointer items-start gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+            >
+              <input
+                type="checkbox"
+                checked={!disabled.includes(f)}
+                onChange={() => toggle(f)}
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"
+              />
+              <span>
+                <span className="block font-medium text-slate-800">{FEATURE_INFO[f]?.label ?? title(f)}</span>
+                <span className="text-xs text-slate-500">{FEATURE_INFO[f]?.hint ?? ''}</span>
+              </span>
+            </label>
+          ))}
+      </div>
+      {!data.planFeatures.filter((f: string) => !data.locked.includes(f)).length && (
+        <p className="py-6 text-center text-sm text-slate-500">
+          Your current plan does not include any optional features yet.
+        </p>
+      )}
+    </Card>
+  );
+}
+
 function Settings() {
   const params = useSearchParams();
   const { can } = useAuth();
@@ -1062,6 +1166,7 @@ function Settings() {
       ? [
           { id: 'profile', label: 'Profile' },
           { id: 'branding', label: 'Branding' },
+          { id: 'features', label: 'Features' },
         ]
       : []),
     ...(can('SETTINGS_MANAGE') ? [{ id: 'rules', label: 'Rules engine' }] : []),
@@ -1076,6 +1181,7 @@ function Settings() {
       <Tabs value={tab} onChange={setTab} tabs={tabs} />
       {tab === 'profile' && <ProfileTab />}
       {tab === 'branding' && <BrandingTab />}
+      {tab === 'features' && <FeaturesTab />}
       {tab === 'rules' && <RulesTab />}
       {tab === 'domains' && <DomainsTab />}
       {tab === 'subscription' && <SubscriptionTab />}

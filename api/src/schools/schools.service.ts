@@ -8,12 +8,14 @@ import { AuditService } from '../audit/audit.service';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { tid } from '../common/context/request-context';
 import { SYSTEM_ROLES } from '../common/permissions';
+import { ALL_FEATURES, CORE_FEATURES } from '../common/features';
 import { DEFAULT_SETTINGS, defaultWebsiteConfig, mergeSettings, validateSettings } from '../common/settings';
 import { nextSequence, pad, randomToken, slugify } from '../common/utils';
 import {
   AddDomainDto,
   RegisterSchoolDto,
   UpdateBrandingDto,
+  UpdateFeaturesDto,
   UpdateSchoolProfileDto,
   UpdateSettingsDto,
   WebsiteConfigDto,
@@ -227,6 +229,36 @@ export class SchoolsService {
     if (s.finance?.paystackSecretKey) s.finance.paystackSecretKeySet = true;
     delete s.finance?.paystackSecretKey;
     return s;
+  }
+
+  /**
+   * Every feature the school's own admins can choose to hide from staff and parents. `planFeatures` is
+   * everything their plan (plus any platform-granted bonus) makes available; `disabledFeatures` is what
+   * they've turned off; `locked` are the always-on essentials no plan-holder can disable.
+   */
+  async getFeatureSettings() {
+    const t = await this.prisma.db.tenant.findUnique({
+      where: { id: tid() },
+      select: { featureOverrides: true, disabledFeatures: true, subscription: { select: { plan: { select: { features: true } } } } },
+    });
+    if (!t) throw new NotFoundException('School not found');
+    const planFeatures = [...new Set([...CORE_FEATURES, ...(t.featureOverrides ?? []), ...(t.subscription?.plan.features ?? [])])];
+    return { planFeatures, disabledFeatures: t.disabledFeatures ?? [], locked: CORE_FEATURES };
+  }
+
+  async updateFeatureSettings(dto: UpdateFeaturesDto) {
+    const bad = dto.disabledFeatures.filter((f) => !ALL_FEATURES.includes(f));
+    if (bad.length) throw new BadRequestException(`Unknown feature(s): ${bad.join(', ')}`);
+    const disabledFeatures = dto.disabledFeatures.filter((f) => !(CORE_FEATURES as string[]).includes(f));
+    const t = await this.prisma.db.tenant.update({ where: { id: tid() }, data: { disabledFeatures } });
+    this.cache.invalidate(tid());
+    await this.audit.log({
+      action: 'SCHOOL_FEATURES_UPDATED',
+      entity: 'Tenant',
+      entityId: t.id,
+      after: { disabledFeatures },
+    });
+    return this.getFeatureSettings();
   }
 
   /** Rules engine update with validation. Partial sections are deep-merged with the stored values. */

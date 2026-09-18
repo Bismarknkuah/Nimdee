@@ -52,6 +52,9 @@ export class TenantCacheService {
       ...(t.featureOverrides ?? []),
       ...(subUsable ? sub.plan.features : []),
     ]);
+    for (const f of t.disabledFeatures ?? []) {
+      if (!(CORE_FEATURES as string[]).includes(f)) features.delete(f);
+    }
     const value: TenantSnapshot = {
       id: t.id,
       code: t.code,

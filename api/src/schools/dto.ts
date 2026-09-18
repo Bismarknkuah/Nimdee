@@ -63,6 +63,10 @@ export class UpdateBrandingDto {
   @IsOptional() @IsString() fontFamily?: string;
 }
 
+export class UpdateFeaturesDto {
+  @IsArray() @IsString({ each: true }) disabledFeatures: string[];
+}
+
 export class UpdateSettingsDto {
   @IsOptional() @IsObject() academic?: any;
   @IsOptional() @IsObject() attendance?: any;

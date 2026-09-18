@@ -101,6 +101,7 @@ model Tenant {
   settings           Json           @default("{}")
   websiteConfig      Json           @default("{}")
   featureOverrides   String[]
+  disabledFeatures   String[]
   approvedAt         DateTime?
   suspendedReason    String?
   createdAt          DateTime       @default(now())

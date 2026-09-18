@@ -83,6 +83,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (me?.tenant) applyBranding(me.tenant);
+    // On a login page, only re-validate a session that actually matches that page's type (platform vs
+    // tenant); otherwise skip the check entirely. Without this, switching between a school login and the
+    // platform console in the same browser tab fires a doomed /auth/me call with the wrong token type on
+    // every page load, which is loud in the console and serves no purpose since a login page's whole job
+    // is starting a fresh session anyway.
+    const path = typeof window !== 'undefined' ? window.location.pathname : '';
+    const onPlatformLogin = path.startsWith('/platform/login');
+    const onTenantLogin = path.startsWith('/login');
+    if (onPlatformLogin || onTenantLogin) {
+      const cached = session.get();
+      const matches = cached && cached.type === (onPlatformLogin ? 'PLATFORM' : 'TENANT');
+      if (!matches) {
+        setLoading(false);
+        return;
+      }
+    }
     refresh();
   }, [refresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
