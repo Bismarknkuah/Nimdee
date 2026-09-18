@@ -232,7 +232,7 @@ export default function PlatformSchoolDetail() {
                 ['Address', s.address],
                 ['Phone', s.phone],
                 ['Email', s.email],
-                ['Principal', s.principalName],
+                ['Head teacher', s.principalName],
                 ['Country', s.country],
                 ['Currency', s.currency],
                 ['Approved', fmtDate(s.approvedAt)],

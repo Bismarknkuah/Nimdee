@@ -26,7 +26,7 @@ export function layout(brand: Brand, title: string, bodyHtml: string, cta?: { la
 ${brand.logoUrl ? `<img src="${esc(brand.logoUrl)}" alt="" width="40" height="40" style="border-radius:8px;vertical-align:middle;margin-right:10px">` : ''}<span style="font-size:18px;font-weight:700;vertical-align:middle">${esc(brand.name)}</span></td></tr>
 <tr><td style="padding:24px"><h1 style="margin:0 0 12px;font-size:20px">${esc(title)}</h1><div style="font-size:15px;line-height:1.55">${bodyHtml}</div>
 ${cta ? `<p style="margin:24px 0 8px"><a href="${esc(cta.url)}" style="display:inline-block;background:${color};color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600">${esc(cta.label)}</a></p>` : ''}</td></tr>
-<tr><td style="padding:16px 24px;background:#f8fafc;color:#64748b;font-size:12px">${esc([brand.address, brand.phone].filter(Boolean).join(' · '))}<br>Sent by School OS on behalf of ${esc(brand.name)}.</td></tr>
+<tr><td style="padding:16px 24px;background:#f8fafc;color:#64748b;font-size:12px">${esc([brand.address, brand.phone].filter(Boolean).join(' · '))}<br>Sent by Nimdee on behalf of ${esc(brand.name)}.</td></tr>
 </table></td></tr></table></body></html>`;
 }
 

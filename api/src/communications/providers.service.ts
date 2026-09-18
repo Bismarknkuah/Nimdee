@@ -58,7 +58,7 @@ export class ProvidersService {
     if (provider === 'SMTP' && process.env.SMTP_HOST) {
       try {
         await this.smtp().sendMail({
-          from: process.env.EMAIL_FROM || 'School OS <no-reply@schoolos.app>',
+          from: process.env.EMAIL_FROM || 'Nimdee <no-reply@schoolos.app>',
           bcc: recipients,
           subject,
           text,

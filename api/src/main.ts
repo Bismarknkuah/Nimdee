@@ -65,7 +65,7 @@ async function bootstrap() {
     const doc = SwaggerModule.createDocument(
       app,
       new DocumentBuilder()
-        .setTitle('School OS API')
+        .setTitle('Nimdee API')
         .setDescription('Multi-tenant school operating system')
         .setVersion('1.0')
         .addBearerAuth()
@@ -76,7 +76,7 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT || 4000);
   await app.listen(port, '0.0.0.0');
-  logger.log(`School OS API listening on :${port}  (docs at /docs, health at /health)`);
+  logger.log(`Nimdee API listening on :${port}  (docs at /docs, health at /health)`);
 }
 bootstrap().catch((e) => {
   console.error(e);

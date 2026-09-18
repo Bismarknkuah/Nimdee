@@ -298,7 +298,7 @@ export class AuthService {
     const email = dto.email.trim().toLowerCase();
     const minutes = 30;
     let user: { id: string; name: string; tenantId: string | null; actorType: 'TENANT' | 'PLATFORM' } | null = null;
-    let brand: any = { name: 'School OS' };
+    let brand: any = { name: 'Nimdee' };
     if (dto.school) {
       const tenant = await this.prisma.platform.tenant.findFirst({
         where: { OR: [{ slug: dto.school.trim().toLowerCase() }, { code: dto.school.trim().toUpperCase() }] },

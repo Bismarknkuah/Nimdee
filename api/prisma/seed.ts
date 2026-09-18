@@ -3,10 +3,11 @@
  * Development seed: platform owner, plans and a fully populated demo school.
  *   npm run seed            (local)      → creates "Bright Future Academy" (slug: brightfuture)
  * Logins (all passwords: Password123!)
- *   platform:  admin@schoolos.app            school admin: admin@brightfuture.edu.gh   principal: principal@brightfuture.edu.gh
- *   teacher:   teacher@brightfuture.edu.gh   teacher 2:    teacher2@brightfuture.edu.gh accountant: accounts@brightfuture.edu.gh
- *   canteen:   canteen@brightfuture.edu.gh   parent:       parent@brightfuture.edu.gh   student:   student@brightfuture.edu.gh
- *   nurse:     nurse@brightfuture.edu.gh     librarian:    librarian@brightfuture.edu.gh HR:       hr@brightfuture.edu.gh
+ *   platform:    admin@schoolos.app             school admin: admin@brightfuture.edu.gh       proprietor: proprietor@brightfuture.edu.gh
+ *   headmaster:  headmaster@brightfuture.edu.gh class teacher: teacher@brightfuture.edu.gh    form master: formmaster@brightfuture.edu.gh
+ *   subj. tchr:  teacher2@brightfuture.edu.gh   accounts:      accounts@brightfuture.edu.gh   canteen:    canteen@brightfuture.edu.gh
+ *   nurse:       nurse@brightfuture.edu.gh      librarian:     librarian@brightfuture.edu.gh  HR:         hr@brightfuture.edu.gh
+ *   parent:      parent@brightfuture.edu.gh     student:       student@brightfuture.edu.gh
  * These are the accounts offered by the "Quick demo access" buttons on the login pages (GET /public/demo-accounts).
  */
 import { Pool } from 'pg';
@@ -140,7 +141,16 @@ async function main() {
       await user('accounts@brightfuture.edu.gh', 'Yaw', 'Asante', 'STAFF', 'Accountant', '+233241112255');
       await user('canteen@brightfuture.edu.gh', 'Efua', 'Darko', 'STAFF', 'Canteen Manager', '+233241112266');
       const parentUser = await user('parent@brightfuture.edu.gh', 'Kofi', 'Adjei', 'PARENT', 'Parent', '+233209876543');
-      await user('principal@brightfuture.edu.gh', 'Nana', 'Ofori', 'STAFF', 'Principal', '+233241112277');
+      await user('proprietor@brightfuture.edu.gh', 'Kwabena', 'Owusu-Ansah', 'STAFF', 'Proprietor', '+233241112311');
+      await user('headmaster@brightfuture.edu.gh', 'Nana', 'Ofori', 'STAFF', 'Headmaster', '+233241112277');
+      const formMasterUser = await user(
+        'formmaster@brightfuture.edu.gh',
+        'Kwesi',
+        'Ansah',
+        'TEACHER',
+        'Class Teacher',
+        '+233241112322',
+      );
       await user('nurse@brightfuture.edu.gh', 'Adjoa', 'Kumi', 'STAFF', 'Nurse', '+233241112288');
       await user('librarian@brightfuture.edu.gh', 'Kojo', 'Appiah', 'STAFF', 'Librarian', '+233241112299');
       await user('hr@brightfuture.edu.gh', 'Esi', 'Tetteh', 'STAFF', 'HR Officer', '+233241112300');
@@ -202,10 +212,25 @@ async function main() {
           employmentDate: d(2021, 1, 10),
         },
       });
+      const staff3 = await tx.staff.create({
+        data: {
+          tenantId: T,
+          userId: formMasterUser.id,
+          employeeId: 'EMP-0003',
+          firstName: 'Kwesi',
+          lastName: 'Ansah',
+          gender: 'MALE',
+          phone: '+233241112322',
+          email: 'formmaster@brightfuture.edu.gh',
+          staffType: 'TEACHING',
+          position: 'Form Master',
+          employmentDate: d(2020, 9, 1),
+        },
+      });
       await tx.sequence.upsert({
         where: { scope_key: { scope: T, key: 'staff' } },
-        update: { value: 2 },
-        create: { scope: T, key: 'staff', value: 2 },
+        update: { value: 3 },
+        create: { scope: T, key: 'staff', value: 3 },
       });
       const subjectDefs = [
         ['English Language', 'ENG'],
@@ -232,7 +257,7 @@ async function main() {
             name,
             level,
             capacity: 40,
-            classTeacherId: i === 0 ? staff1.id : i === 1 ? staff2.id : null,
+            classTeacherId: i === 0 ? staff1.id : i === 1 ? staff2.id : i === 2 ? staff3.id : null,
           },
         });
         classes.push(c);
@@ -508,7 +533,7 @@ async function main() {
           startAt: dayAgo(-4),
           location: 'ICT Lab',
           audienceType: 'STAFF',
-          description: 'Using School OS offline attendance and results workflow.',
+          description: 'Using Nimdee offline attendance and results workflow.',
         },
         {
           title: 'Basic 5 Museum Trip',

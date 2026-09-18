@@ -26,7 +26,7 @@ const BATCH = 1000;
  * Full data ownership: every school can download everything it has stored, at any time.
  *  - JSON  → one file per table (machine-readable, re-importable)
  *  - CSV   → one file per table (opens in Excel / Google Sheets)
- *  - SQL   → INSERT statements in dependency order that restore the school into a fresh School OS database
+ *  - SQL   → INSERT statements in dependency order that restore the school into a fresh Nimdee database
  * The export is streamed as a ZIP straight to the browser (no temporary files), runs through the
  * tenant-scoped client so Row-Level Security guarantees only the school's own rows are read,
  * and is recorded in the DataExport history + audit log.
@@ -246,7 +246,7 @@ export class DataExportService {
       archive.append(
         Readable.from(
           (async function* () {
-            yield `-- School OS data backup for ${tenant.name} (${tenant.code})\n-- Generated ${new Date().toISOString()}\n-- Restore: create an empty School OS database, run \`npx prisma migrate deploy\`, then \`psql "$DATABASE_URL" -f backup.sql\`.\n-- Tables are emitted in foreign-key order; self-references are patched with UPDATE statements at the end.\nBEGIN;\nSELECT set_config('app.bypass_rls', 'on', TRUE);\n\n`;
+            yield `-- Nimdee data backup for ${tenant.name} (${tenant.code})\n-- Generated ${new Date().toISOString()}\n-- Restore: create an empty Nimdee database, run \`npx prisma migrate deploy\`, then \`psql "$DATABASE_URL" -f backup.sql\`.\n-- Tables are emitted in foreign-key order; self-references are patched with UPDATE statements at the end.\nBEGIN;\nSELECT set_config('app.bypass_rls', 'on', TRUE);\n\n`;
             const tCols = Prisma.dmmf.datamodel.models
               .find((m) => m.name === 'Tenant')!
               .fields.filter((f) => f.kind !== 'object');
@@ -307,7 +307,7 @@ export class DataExportService {
       { name: 'manifest.json' },
     );
     archive.append(
-      `School OS data export — ${tenant.name}\n\nFolders:\n  json/   one JSON array per table (School.json holds the school profile, branding, rules and website)\n  csv/    the same tables as CSV (UTF-8 with BOM, opens in Excel)\n  sql/    backup.sql restores this school into a fresh School OS database; schema.prisma documents every table\n  manifest.json  what was exported and when\n\nSensitive values (payment gateway secrets, password hashes) are never included.\nThis export was recorded in your audit log.\n`,
+      `Nimdee data export — ${tenant.name}\n\nFolders:\n  json/   one JSON array per table (School.json holds the school profile, branding, rules and website)\n  csv/    the same tables as CSV (UTF-8 with BOM, opens in Excel)\n  sql/    backup.sql restores this school into a fresh Nimdee database; schema.prisma documents every table\n  manifest.json  what was exported and when\n\nSensitive values (payment gateway secrets, password hashes) are never included.\nThis export was recorded in your audit log.\n`,
       { name: 'README.txt' },
     );
     await archive.finalize();

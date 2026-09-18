@@ -184,8 +184,8 @@ export function defaultWebsiteConfig(schoolName: string) {
         type: 'message',
         enabled: true,
         props: {
-          title: "Principal's message",
-          name: 'The Principal',
+          title: "Headmaster's message",
+          name: 'The Headmaster',
           body: 'We are committed to giving every child the very best start in life.',
         },
       },

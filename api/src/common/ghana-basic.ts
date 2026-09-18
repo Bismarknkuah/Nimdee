@@ -1,7 +1,7 @@
 /**
  * Ghana basic-school catalogue: KG, Primary (Basic 1–6) and JHS (Basic 7–9).
  *
- * School OS is built for basic schools. A school picks which levels it runs (a KG-only school, a
+ * Nimdee is built for basic schools. A school picks which levels it runs (a KG-only school, a
  * Primary school, a JHS, or a full basic school) and whether it is a day school, a boarding school or
  * both. Everything here is a sensible default that the school can edit in Settings → Rules engine.
  */

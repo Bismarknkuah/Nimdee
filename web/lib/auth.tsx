@@ -24,7 +24,7 @@ interface AuthCtx {
   refresh: () => Promise<Me | null>;
   can: (...perms: string[]) => boolean;
   has: (feature: string) => boolean;
-  role: 'admin' | 'teacher' | 'parent' | 'student' | 'finance' | 'canteen' | 'platform' | null;
+  role: 'admin' | 'proprietor' | 'teacher' | 'parent' | 'student' | 'finance' | 'canteen' | 'platform' | null;
 }
 
 const Ctx = createContext<AuthCtx>(null as any);
@@ -139,9 +139,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const ut = me.user?.userType;
     if (ut === 'PARENT') return 'parent';
     if (ut === 'STUDENT') return 'student';
+    if (roles.includes('Proprietor')) return 'proprietor';
     if (
       roles.includes('School Admin') ||
-      roles.includes('Principal') ||
+      roles.includes('Headmaster') ||
       roles.includes('Academic Head') ||
       can('SCHOOL_MANAGE')
     )

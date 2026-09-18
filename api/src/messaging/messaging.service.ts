@@ -60,7 +60,7 @@ export class MessagingService {
         ),
       ];
       const admins = await db.user.findMany({
-        where: { isActive: true, roles: { some: { role: { name: { in: ['School Admin', 'Principal'] } } } } },
+        where: { isActive: true, roles: { some: { role: { name: { in: ['School Admin', 'Proprietor', 'Headmaster'] } } } } },
         select: { id: true },
       });
       const names = await this.userNames([...new Set([...teacherIds, ...admins.map((a) => a.id)])]);

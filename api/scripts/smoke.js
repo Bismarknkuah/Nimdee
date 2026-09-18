@@ -1180,14 +1180,14 @@ const today = new Date().toISOString().slice(0, 10);
     'demo accounts listed for the login page',
     r.status === 200 &&
       r.data.enabled &&
-      r.data.accounts.length >= 11 &&
+      r.data.accounts.length >= 13 &&
       r.data.platform &&
       r.data.school.slug === 'brightfuture',
     r.data,
   );
-  // Login is rate-limited to 10/min per IP, so only the new roles are exercised here (the others log in earlier in this suite).
+  // Login is rate-limited to 30/min per IP (shared-NAT schools), so only the new roles are exercised here (the others log in earlier in this suite).
   const demoTokens = {};
-  for (const email of ['principal@', 'nurse@', 'librarian@', 'hr@', 'student@']) {
+  for (const email of ['proprietor@', 'headmaster@', 'formmaster@', 'nurse@', 'librarian@', 'hr@', 'student@']) {
     const l = await call('POST', '/auth/login', {
       body: { school: 'brightfuture', email: `${email}brightfuture.edu.gh`, password: r.data.password },
     });
@@ -1206,8 +1206,20 @@ const today = new Date().toISOString().slice(0, 10);
   check('HR officer can open payroll', r.status === 200, r.data);
   r = await call('GET', '/library/summary', { token: demoTokens['librarian@'] });
   check('librarian can open the library', r.status === 200, r.data);
-  r = await call('GET', '/dashboard/school', { token: demoTokens['principal@'] });
-  check('principal sees the school dashboard', r.status === 200 && r.data.counts, r.data);
+  r = await call('GET', '/dashboard/school', { token: demoTokens['headmaster@'] });
+  check('headmaster sees the school dashboard', r.status === 200 && r.data.counts, r.data);
+  r = await call('GET', '/subscription', { token: demoTokens['headmaster@'] });
+  check("headmaster cannot manage the subscription (no SUBSCRIPTION_MANAGE)", r.status === 403, r.status);
+  r = await call('GET', '/dashboard/school', { token: demoTokens['proprietor@'] });
+  check('proprietor sees the school dashboard', r.status === 200 && r.data.counts, r.data);
+  r = await call('GET', '/subscription', { token: demoTokens['proprietor@'] });
+  check('proprietor can manage the subscription (owner-only permission)', r.status === 200 && r.data.usage, r.data);
+  r = await call('GET', '/academic/classes', { token: demoTokens['formmaster@'] });
+  check(
+    'form master is class teacher of JHS 1',
+    r.status === 200 && r.data.some((c) => c.name === 'JHS 1' && c.classTeacher),
+    r.data,
+  );
 
   // ─── Cross-tenant isolation ───
   section('Tenant isolation');

@@ -42,10 +42,12 @@ export class PublicController {
     if (!tenant || tenant.status !== 'ACTIVE') return { enabled: false };
     const emails = [
       ['admin@brightfuture.edu.gh', 'School administrator', 'admin'],
-      ['principal@brightfuture.edu.gh', 'Principal', 'admin'],
-      ['teacher@brightfuture.edu.gh', 'Class teacher', 'teacher'],
+      ['proprietor@brightfuture.edu.gh', 'Proprietor', 'owner'],
+      ['headmaster@brightfuture.edu.gh', 'Headmaster', 'admin'],
+      ['teacher@brightfuture.edu.gh', 'Class teacher (Basic 5)', 'teacher'],
+      ['formmaster@brightfuture.edu.gh', 'Form master (JHS 1)', 'teacher'],
       ['teacher2@brightfuture.edu.gh', 'Subject teacher', 'teacher'],
-      ['accounts@brightfuture.edu.gh', 'Accountant', 'finance'],
+      ['accounts@brightfuture.edu.gh', 'Accounts officer', 'finance'],
       ['canteen@brightfuture.edu.gh', 'Canteen manager', 'canteen'],
       ['nurse@brightfuture.edu.gh', 'School nurse', 'staff'],
       ['librarian@brightfuture.edu.gh', 'Librarian', 'staff'],

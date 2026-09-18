@@ -58,8 +58,15 @@ const TEACHER = [
 /** System roles created for every new school. Schools can add their own roles on top. */
 export const SYSTEM_ROLES: Record<string, { description: string; permissions: string[] }> = {
   'School Admin': { description: 'Full access to everything in the school', permissions: ['*'] },
-  Principal: {
-    description: 'Oversight of academics, finance and operations',
+  Proprietor: {
+    description: 'School owner: full oversight plus billing and subscription',
+    permissions: [
+      ...ALL_PERMISSIONS.filter((p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'BACKUP_DOWNLOAD'].includes(p)),
+      'SUBSCRIPTION_MANAGE',
+    ],
+  },
+  Headmaster: {
+    description: 'Head of school: oversight of academics, finance and operations',
     permissions: ALL_PERMISSIONS.filter(
       (p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'SUBSCRIPTION_MANAGE', 'BACKUP_DOWNLOAD'].includes(p),
     ),
