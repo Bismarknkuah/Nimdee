@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ALLOW_INACTIVE_TENANT, IS_PUBLIC, PLATFORM_ONLY } from '../decorators';
+import { ALLOW_ANY_ACTOR, ALLOW_INACTIVE_TENANT, IS_PUBLIC, PLATFORM_ONLY } from '../decorators';
 import { ctx } from '../context/request-context';
 import { TenantCacheService } from '../../tenants/tenant-cache.service';
 
@@ -18,6 +18,7 @@ export class TenantGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const targets = [context.getHandler(), context.getClass()];
     if (this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, targets)) return true;
+    if (this.reflector.getAllAndOverride<boolean>(ALLOW_ANY_ACTOR, targets)) return true;
     const platformOnly = this.reflector.getAllAndOverride<boolean>(PLATFORM_ONLY, targets);
     const c = ctx();
     if (platformOnly) {

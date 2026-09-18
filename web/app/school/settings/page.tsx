@@ -240,6 +240,7 @@ function RulesTab() {
   const [s, setS] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [paystack, setPaystack] = useState('');
+  const [gradeLevel, setGradeLevel] = useState<'KG' | 'PRIMARY' | 'JHS'>('PRIMARY');
   useEffect(() => {
     if (data) setS(JSON.parse(JSON.stringify(data)));
   }, [data]);
@@ -271,7 +272,6 @@ function RulesTab() {
       setBusy(false);
     }
   };
-  const [gradeLevel, setGradeLevel] = useState<'KG' | 'PRIMARY' | 'JHS'>('PRIMARY');
   const schemes = s.academic.gradingSchemes ?? {};
   const bands = (schemes[gradeLevel] ?? s.academic.gradingScheme) as any[];
   const setBands = (next: any[]) => up('academic', 'gradingSchemes', { ...schemes, [gradeLevel]: next });

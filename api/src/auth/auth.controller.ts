@@ -3,7 +3,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto, ForgotPasswordDto, LoginDto, PlatformLoginDto, RefreshDto, ResetPasswordDto } from './dto';
-import { AllowInactiveTenant, Public } from '../common/decorators';
+import { AllowAnyActor, AllowInactiveTenant, Public } from '../common/decorators';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -50,30 +50,35 @@ export class AuthController {
     return this.auth.resetPassword(dto);
   }
 
+  @AllowAnyActor()
   @AllowInactiveTenant()
   @Get('sessions')
   sessions() {
     return this.auth.sessions();
   }
 
+  @AllowAnyActor()
   @AllowInactiveTenant()
   @Delete('sessions/:id')
   revoke(@Param('id') id: string) {
     return this.auth.revokeSession(id);
   }
 
+  @AllowAnyActor()
   @AllowInactiveTenant()
   @Post('sessions/revoke-all')
   revokeAll() {
     return this.auth.revokeAllSessions();
   }
 
+  @AllowAnyActor()
   @AllowInactiveTenant()
   @Get('me')
   me() {
     return this.auth.me();
   }
 
+  @AllowAnyActor()
   @AllowInactiveTenant()
   @Post('change-password')
   changePassword(@Body() dto: ChangePasswordDto) {

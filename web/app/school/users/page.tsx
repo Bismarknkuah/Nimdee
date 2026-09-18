@@ -364,12 +364,12 @@ function RolesTab() {
           {Object.entries(catalog?.groups ?? {}).map(([group, perms]: any) => (
             <Card key={group} title={title(group)}>
               <div className="space-y-1">
-                {perms.map((p: any) => (
+                {perms.map((p: string) => (
                   <Checkbox
-                    key={p.key}
-                    label={p.label}
-                    checked={f.permissions?.includes(p.key)}
-                    onChange={() => toggle(p.key)}
+                    key={p}
+                    label={title(p)}
+                    checked={!!f.permissions?.includes(p)}
+                    onChange={() => toggle(p)}
                   />
                 ))}
               </div>

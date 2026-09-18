@@ -451,6 +451,47 @@ export class FeesService {
     const discountTotal = money(lines.reduce((a, l) => a.plus(l.discount), zero()));
     const total = money(subtotal.minus(discountTotal));
     if (total.lte(0)) throw new BadRequestException('Invoice total must be greater than zero');
+
+    // A student can only have one invoice per term (tenantId, studentId, termId is unique), and in a real
+    // school they almost always already have one (tuition, etc.) before an extra charge like a canteen
+    // plan comes along. Add these lines to that existing invoice instead of trying to create a second one,
+    // which would fail on the unique constraint; only create a fresh invoice when there truly isn't one yet.
+    const existing = await tx.invoice.findUnique({
+      where: { tenantId_studentId_termId: { tenantId, studentId: input.studentId, termId: term.id } },
+    });
+    if (existing && existing.status !== 'CANCELLED') {
+      const newSubtotal = money(existing.subtotal.plus(subtotal));
+      const newDiscountTotal = money(existing.discountTotal.plus(discountTotal));
+      const newTotal = money(existing.total.plus(total));
+      const lastInstallment = await tx.installment.findFirst({
+        where: { invoiceId: existing.id },
+        orderBy: { sequence: 'desc' },
+      });
+      const inv = await tx.invoice.update({
+        where: { id: existing.id },
+        data: {
+          subtotal: newSubtotal,
+          discountTotal: newDiscountTotal,
+          total: newTotal,
+          status: existing.status === 'PAID' ? 'ISSUED' : existing.status,
+          lines: { create: lines.map((l) => ({ tenantId, ...l })) },
+          installments: {
+            create: [{ tenantId, sequence: (lastInstallment?.sequence ?? 0) + 1, amount: total, dueDate: input.dueDate }],
+          },
+        },
+      });
+      await this.postLedger(
+        tx,
+        input.studentId,
+        'DEBIT',
+        'INVOICE',
+        inv.id,
+        `Invoice ${existing.number} (added): ${input.lines.map((l) => l.description).join(', ')}`,
+        total,
+      );
+      return inv;
+    }
+
     const seq = await nextSequence(tx, tenantId, 'invoice');
     const number = `${settings.finance.invoicePrefix}-${term.academicYear.startDate.getUTCFullYear()}-${pad(seq, 6)}`;
     const inv = await tx.invoice.create({
