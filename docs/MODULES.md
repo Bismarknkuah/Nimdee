@@ -42,7 +42,7 @@ Every school configures which basic-education levels it runs (KG / Primary / JHS
 
 ## System roles
 
-School Admin (all permissions), Proprietor, Headmaster, Academic Head, Teacher, Class Teacher, Accountant, Cashier, Canteen Manager, Nurse, Librarian, HR Officer, Parent, Student. Roles are editable per school; custom roles can be created from the permission catalogue.
+School Admin (configures the school: roles, features, settings; no day-to-day data entry), Proprietor (oversight and reporting only, plus billing), Headmaster, Academic Head, Teacher, Class Teacher, Accountant, Cashier, Canteen Manager, Nurse, Librarian, HR Officer, Parent, Student. Roles are editable per school; custom roles can be created from the permission catalogue.
 
 ## Plans (defaults, editable by the platform)
 

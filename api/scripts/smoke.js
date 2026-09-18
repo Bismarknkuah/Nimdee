@@ -107,12 +107,26 @@ const today = new Date().toISOString().slice(0, 10);
   const refreshToken = r.data.refreshToken;
   r = await call('GET', '/auth/me', { token: A });
   check(
-    '/auth/me has permissions + features',
-    r.status === 200 && r.data.permissions.includes('*') && r.data.features.includes('FEES'),
+    '/auth/me has permissions + features (School Admin manages, does not enter data)',
+    r.status === 200 &&
+      r.data.permissions.includes('SCHOOL_MANAGE') &&
+      !r.data.permissions.includes('STUDENT_CREATE') &&
+      r.data.features.includes('FEES'),
     r.data,
   );
   r = await call('POST', '/auth/refresh', { body: { refreshToken } });
   check('refresh token rotation', r.status === 201 && r.data.accessToken, r.data);
+
+  // Headmaster: the operational head of school. Day-to-day actions that School Admin (pure
+  // configuration) and Proprietor (pure oversight) deliberately no longer hold — enrolling and
+  // editing students, the results approval chain, building the timetable, inventory movements and
+  // approving a refund — are exercised as the Headmaster instead, since that is who actually holds
+  // those permissions now.
+  r = await call('POST', '/auth/login', {
+    body: { school: 'brightfuture', email: 'headmaster@brightfuture.edu.gh', password: PASSWORD },
+  });
+  check('headmaster login (for operational actions admin no longer performs)', r.status === 201, r.data);
+  const H = r.data.accessToken;
   r = await call('POST', '/auth/refresh', { body: { refreshToken } });
   check('old refresh token revoked', r.status === 401, r.data);
   r = await call('POST', '/auth/login', {
@@ -223,7 +237,7 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/students?pageSize=10', { token: A });
   check('students paginated', r.status === 200 && r.data.total === 32 && r.data.items.length === 10, r.data);
   r = await call('POST', '/students', {
-    token: A,
+    token: H,
     body: {
       firstName: 'Kweku',
       lastName: 'Tester',
@@ -258,7 +272,7 @@ const today = new Date().toISOString().slice(0, 10);
     body: { payload: 'SOS1|SCH-GH-000001|STD-2026-000001|deadbeefdeadbeef' },
   });
   check('forged QR rejected', r.status === 400, r.data);
-  r = await call('PATCH', `/students/${newStudent.id}`, { token: A, body: { house: 'Red' } });
+  r = await call('PATCH', `/students/${newStudent.id}`, { token: H, body: { house: 'Red' } });
   check('student update bumps version', r.status === 200 && r.data.version === 2, r.data);
   r = await call('POST', `/students/${newStudent.id}/login`, { token: A });
   check('student login created', r.status === 201 && r.data.email.endsWith('.student'), r.data);
@@ -317,7 +331,7 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/attendance/daily', { token: A });
   check('daily snapshot', r.status === 200 && r.data.marked === 9 && r.data.ABSENT === 1, r.data);
   r = await call('POST', '/attendance/mark', {
-    token: A,
+    token: T,
     body: { classId: p5.id, date: '2099-01-01', records: [{ studentId: p5Students[0].id, status: 'PRESENT' }] },
   });
   check('future date rejected', r.status === 400, r.data);
@@ -540,7 +554,7 @@ const today = new Date().toISOString().slice(0, 10);
   });
   check('final payment settles invoice', r.status === 201 && r.data.invoice.status === 'PAID', r.data);
   const payment2 = r.data;
-  r = await call('POST', `/fees/payments/${payment2.id}/reverse`, { token: A, body: { reason: 'Cashier error' } });
+  r = await call('POST', `/fees/payments/${payment2.id}/reverse`, { token: H, body: { reason: 'Cashier error' } });
   check('payment reversal (admin)', r.status === 201 && r.data.status === 'REVERSED', r.data);
   r = await call('GET', `/fees/students/${p5Students[0].id}/statement`, { token: F });
   check(
@@ -615,14 +629,14 @@ const today = new Date().toISOString().slice(0, 10);
       r.data.subjects.find((s) => s.code === 'ENG').grade,
     r.data.subjects,
   );
-  r = await call('POST', '/results/publish', { token: A, body: { termId: term.id, classId: p5.id } });
+  r = await call('POST', '/results/publish', { token: H, body: { termId: term.id, classId: p5.id } });
   check('cannot publish before approval chain', r.status === 400, r.data);
   r = await call('POST', '/results/submit', { token: T, body: { termId: term.id, classId: p5.id } });
   check('teacher submits', r.status === 201 && r.data.count === 9, r.data);
   r = await call('POST', '/results/review', { token: T, body: { termId: term.id, classId: p5.id } });
   check('teacher cannot review (403)', r.status === 403, r.data);
   r = await call('POST', '/results/reject', {
-    token: A,
+    token: H,
     body: { termId: term.id, classId: p5.id, studentIds: [sheet.studentId], reason: 'Check English score' },
   });
   check('one sheet sent back', r.status === 201 && r.data.count === 1, r.data);
@@ -631,16 +645,16 @@ const today = new Date().toISOString().slice(0, 10);
     body: { termId: term.id, classId: p5.id, studentIds: [sheet.studentId] },
   });
   check('resubmitted', r.status === 201 && r.data.count === 1, r.data);
-  r = await call('POST', '/results/review', { token: A, body: { termId: term.id, classId: p5.id } });
+  r = await call('POST', '/results/review', { token: H, body: { termId: term.id, classId: p5.id } });
   check('reviewed', r.status === 201 && r.data.count === 9, r.data);
-  r = await call('POST', '/results/approve', { token: A, body: { termId: term.id, classId: p5.id } });
+  r = await call('POST', '/results/approve', { token: H, body: { termId: term.id, classId: p5.id } });
   check('approved', r.status === 201 && r.data.count === 9, r.data);
   r = await call('PATCH', `/results/sheets/${sheet.id}/comments`, {
     token: T,
     body: { classTeacherComment: 'Excellent work', conduct: 'Very good' },
   });
   check('class teacher comment', r.status === 200, r.data);
-  r = await call('POST', '/results/publish', { token: A, body: { termId: term.id, classId: p5.id } });
+  r = await call('POST', '/results/publish', { token: H, body: { termId: term.id, classId: p5.id } });
   check('published', r.status === 201 && r.data.count === 9, r.data);
   r = await call('PUT', `/results/assessments/${a1.id}/marks`, {
     token: T,
@@ -662,12 +676,12 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/staff', { token: A });
   const staff1 = r.data.items.find((s) => s.employeeId === 'EMP-0001');
   r = await call('POST', '/timetable/slots', {
-    token: A,
+    token: H,
     body: { classId: p5.id, subjectId: eng.id, dayOfWeek: 1, periodId: periods[0].id, roomId: room.id },
   });
   check('slot created (teacher inherited)', r.status === 201 && r.data.teacher.id === staff1.id, r.data);
   r = await call('POST', '/timetable/slots', {
-    token: A,
+    token: H,
     body: { classId: jhs1.id, subjectId: eng.id, dayOfWeek: 1, periodId: periods[0].id },
   });
   check(
@@ -676,12 +690,12 @@ const today = new Date().toISOString().slice(0, 10);
     r.data,
   );
   r = await call('POST', '/timetable/slots', {
-    token: A,
+    token: H,
     body: { classId: jhs1.id, subjectId: math.id, dayOfWeek: 1, periodId: periods[0].id, roomId: room.id },
   });
   check('room double-booking → 409', r.status === 409 && r.data.conflicts.some((c) => c.type === 'ROOM'), r.data);
   r = await call('POST', '/timetable/slots', {
-    token: A,
+    token: H,
     body: { classId: jhs1.id, subjectId: math.id, dayOfWeek: 1, periodId: periods[1].id },
   });
   check('non-conflicting slot ok', r.status === 201, r.data);
@@ -751,7 +765,7 @@ const today = new Date().toISOString().slice(0, 10);
     r.data,
   );
   r = await call('POST', `/inventory/items/${r.data[0].id}/move`, {
-    token: A,
+    token: H,
     body: { type: 'IN', quantity: 20, reason: 'Purchase' },
   });
   check('inventory movement', r.status === 201 && r.data.quantity === 28, r.data);
@@ -829,12 +843,12 @@ const today = new Date().toISOString().slice(0, 10);
     },
   });
   check('public application', r.status === 201 && /^APP-\d{4}-\d{5}$/.test(r.data.applicationNumber), r.data);
-  r = await call('GET', '/admissions', { token: A });
+  r = await call('GET', '/admissions', { token: H });
   check('admissions listed', r.status === 200 && r.data.total === 1, r.data);
   const app = r.data.items[0];
-  r = await call('PATCH', `/admissions/${app.id}/status`, { token: A, body: { status: 'APPROVED', notes: 'Good' } });
+  r = await call('PATCH', `/admissions/${app.id}/status`, { token: H, body: { status: 'APPROVED', notes: 'Good' } });
   check('application approved', r.status === 200 && r.data.status === 'APPROVED', r.data);
-  r = await call('POST', `/admissions/${app.id}/admit`, { token: A, body: { classId: p5.id } });
+  r = await call('POST', `/admissions/${app.id}/admit`, { token: H, body: { classId: p5.id } });
   check(
     'admitted → student + guardian created',
     r.status === 201 && r.data.student.studentId && r.data.student.guardians.length === 1,
@@ -923,7 +937,7 @@ const today = new Date().toISOString().slice(0, 10);
   check('teacher logs incident', r.status === 201 && r.data.status === 'OPEN', r.data);
   const incidentId = r.data.id;
   r = await call('PATCH', `/discipline/incidents/${incidentId}`, {
-    token: A,
+    token: H,
     body: { status: 'RESOLVED', actionTaken: 'Warning issued' },
   });
   check('incident resolved', r.status === 200 && r.data.status === 'RESOLVED' && r.data.resolvedAt, r.data);
@@ -1004,7 +1018,7 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('GET', '/library/books', { token: A });
   check('catalogue', r.status === 200 && r.data.total >= 7, r.data);
   const book = r.data.items.find((b) => b.copiesAvailable > 1);
-  r = await call('POST', '/library/loans', { token: A, body: { bookId: book.id, studentId: p5Students[4].id } });
+  r = await call('POST', '/library/loans', { token: H, body: { bookId: book.id, studentId: p5Students[4].id } });
   check('book borrowed', r.status === 201 && r.data.status === 'BORROWED', r.data);
   const loanId = r.data.id;
   r = await call('GET', '/library/books?search=' + encodeURIComponent(book.title.slice(0, 8)), { token: A });
@@ -1013,13 +1027,13 @@ const today = new Date().toISOString().slice(0, 10);
     r.data.items.find((b) => b.id === book.id).copiesAvailable === book.copiesAvailable - 1,
     r.data,
   );
-  r = await call('POST', `/library/loans/${loanId}/return`, { token: A, body: {} });
+  r = await call('POST', `/library/loans/${loanId}/return`, { token: H, body: {} });
   check('book returned', r.status === 201 && r.data.status === 'RETURNED', r.data);
   r = await call('GET', '/library/summary', { token: A });
   check('library summary with overdue', r.status === 200 && r.data.overdueCount >= 1, r.data);
   r = await call('GET', '/library/loans?status=OVERDUE', { token: A });
   const overdueStudent = r.data.items[0]?.studentId;
-  r = await call('POST', '/library/loans', { token: A, body: { bookId: book.id, studentId: overdueStudent } });
+  r = await call('POST', '/library/loans', { token: H, body: { bookId: book.id, studentId: overdueStudent } });
   check('student with overdue book blocked', r.status === 400, r.data);
 
   section('Transport');
@@ -1027,23 +1041,23 @@ const today = new Date().toISOString().slice(0, 10);
   check('routes with occupancy', r.status === 200 && r.data.length === 2 && r.data[0].riders >= 1, r.data);
   const route = r.data[0];
   r = await call('POST', '/transport/assignments', {
-    token: A,
+    token: H,
     body: { studentId: p5Students[7].id, routeId: route.id, stopId: route.stops[0].id },
   });
   check('student assigned to route', r.status === 201, r.data);
   r = await call('GET', `/portal/children/${child.id}/transport`, { token: G });
   check('parent sees transport', r.status === 200, r.data);
-  r = await call('DELETE', `/transport/assignments/${p5Students[7].id}`, { token: A });
+  r = await call('DELETE', `/transport/assignments/${p5Students[7].id}`, { token: H });
   check('student removed from route', r.status === 200, r.data);
 
   section('Health');
   r = await call('PUT', `/health/students/${child.id}`, {
-    token: A,
+    token: H,
     body: { bloodGroup: 'A+', allergies: 'None known' },
   });
   check('health record upserted', r.status === 200 && r.data.bloodGroup === 'A+', r.data);
   r = await call('POST', '/health/visits', {
-    token: A,
+    token: H,
     body: { studentId: child.id, complaint: 'Stomach ache', treatment: 'Rested', notifyParent: true },
   });
   check('visit logged + parent notified', r.status === 201, r.data);
@@ -1094,16 +1108,16 @@ const today = new Date().toISOString().slice(0, 10);
   const leaveId = r.data.id;
   r = await call('POST', `/hr/leave/${leaveId}/review`, { token: T, body: { status: 'APPROVED' } });
   check('teacher cannot approve leave', r.status === 403, r.data);
-  r = await call('POST', `/hr/leave/${leaveId}/review`, { token: A, body: { status: 'APPROVED', note: 'Enjoy' } });
-  check('admin approves leave', r.status === 201 && r.data.status === 'APPROVED', r.data);
-  r = await call('GET', '/hr/payroll', { token: A });
+  r = await call('POST', `/hr/leave/${leaveId}/review`, { token: H, body: { status: 'APPROVED', note: 'Enjoy' } });
+  check('headmaster approves leave', r.status === 201 && r.data.status === 'APPROVED', r.data);
+  r = await call('GET', '/hr/payroll', { token: H });
   check('payroll history', r.status === 200 && r.data.length >= 1, r.data);
   const nextPeriod = (() => {
     const d = new Date();
     d.setUTCMonth(d.getUTCMonth() + 1);
     return d.toISOString().slice(0, 7);
   })();
-  r = await call('POST', '/hr/payroll', { token: A, body: { period: nextPeriod } });
+  r = await call('POST', '/hr/payroll', { token: H, body: { period: nextPeriod } });
   check(
     'payroll draft from salaries',
     r.status === 201 && r.data.items.length >= 2 && Number(r.data.totalNet) > 0,
@@ -1111,7 +1125,7 @@ const today = new Date().toISOString().slice(0, 10);
   );
   const runId = r.data.id;
   r = await call('PUT', `/hr/payroll/${runId}/items`, {
-    token: A,
+    token: H,
     body: { items: [{ staffId: staff1.id, basic: 2800, allowances: 100, deductions: 50 }] },
   });
   check(
@@ -1119,9 +1133,9 @@ const today = new Date().toISOString().slice(0, 10);
     r.status === 200 && Number(r.data.items.find((i) => i.staffId === staff1.id).net) === 2850,
     r.data,
   );
-  r = await call('POST', `/hr/payroll/${runId}/pay`, { token: A });
+  r = await call('POST', `/hr/payroll/${runId}/pay`, { token: H });
   check('cannot pay before approval', r.status === 400, r.data);
-  r = await call('POST', `/hr/payroll/${runId}/approve`, { token: A });
+  r = await call('POST', `/hr/payroll/${runId}/approve`, { token: H });
   check('payroll approved', r.status === 201 && r.data.status === 'APPROVED', r.data);
   r = await call('GET', `/hr/payroll/${runId}/payslips/${staff1.id}`, { token: T });
   check('teacher views own payslip', r.status === 200 && Number(r.data.net) === 2850, r.data);
@@ -1231,9 +1245,8 @@ const today = new Date().toISOString().slice(0, 10);
   check('school 2 cannot fetch school 1 invoice', r.status === 404, r.data);
   r = await call('GET', `/academic/classes/${p5.id}`, { token: school2.token });
   check('school 2 cannot fetch school 1 class', r.status === 404, r.data);
-  r = await call('POST', '/attendance/mark', {
+  r = await call('DELETE', `/academic/classes/${p5.id}`, {
     token: school2.token,
-    body: { classId: p5.id, date: today, records: [{ studentId: newStudent.id, status: 'PRESENT' }] },
   });
   check('school 2 cannot write into school 1 class (404)', r.status === 404, r.data);
   r = await call('GET', '/platform/stats', { token: A });

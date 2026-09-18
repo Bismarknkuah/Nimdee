@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { RequirePermissions } from '../common/decorators';
+import { RequireAnyPermission, RequirePermissions } from '../common/decorators';
 import { AdmissionsService } from './admissions.service';
 import { AdmissionStatusDto, AdmitDto, ListAdmissionsDto } from './dto';
 
@@ -8,10 +8,10 @@ import { AdmissionStatusDto, AdmitDto, ListAdmissionsDto } from './dto';
 @Controller('admissions')
 export class AdmissionsController {
   constructor(private readonly admissions: AdmissionsService) {}
-  @Get() @RequirePermissions('ADMISSIONS_MANAGE') list(@Query() q: ListAdmissionsDto) {
+  @Get() @RequireAnyPermission('ADMISSIONS_VIEW', 'ADMISSIONS_MANAGE') list(@Query() q: ListAdmissionsDto) {
     return this.admissions.list(q);
   }
-  @Get(':id') @RequirePermissions('ADMISSIONS_MANAGE') get(@Param('id') id: string) {
+  @Get(':id') @RequireAnyPermission('ADMISSIONS_VIEW', 'ADMISSIONS_MANAGE') get(@Param('id') id: string) {
     return this.admissions.get(id);
   }
   @Patch(':id/status') @RequirePermissions('ADMISSIONS_MANAGE') status(

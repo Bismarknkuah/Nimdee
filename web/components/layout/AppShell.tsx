@@ -68,7 +68,12 @@ const SCHOOL_NAV: NavGroup[] = [
       { href: '/school/students', label: 'Students', icon: GraduationCap, perms: ['STUDENT_VIEW'] },
       { href: '/school/guardians', label: 'Parents & guardians', icon: UsersRound, perms: ['STUDENT_VIEW'] },
       { href: '/school/staff', label: 'Staff', icon: Users, perms: ['STAFF_VIEW'] },
-      { href: '/school/admissions', label: 'Admissions', icon: UserPlus, perms: ['ADMISSIONS_MANAGE'] },
+      {
+        href: '/school/admissions',
+        label: 'Admissions',
+        icon: UserPlus,
+        perms: ['ADMISSIONS_VIEW', 'ADMISSIONS_MANAGE'],
+      },
       { href: '/school/id-cards', label: 'ID cards', icon: ShieldCheck, perms: ['STUDENT_VIEW'] },
     ],
   },

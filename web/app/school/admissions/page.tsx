@@ -25,7 +25,7 @@ const STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'INTERVIEW', 'ASSESSMENT', 'APPRO
 
 export default function AdmissionsPage() {
   const toast = useToast();
-  const { me } = useAuth();
+  const { me, can } = useAuth();
   const { classes } = useAcademic();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -106,7 +106,8 @@ export default function AdmissionsPage() {
         footer={
           sel &&
           sel.status !== 'ADMITTED' &&
-          sel.status !== 'REJECTED' && (
+          sel.status !== 'REJECTED' &&
+          can('ADMISSIONS_MANAGE') && (
             <>
               <Button
                 variant="secondary"

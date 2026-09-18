@@ -17,6 +17,7 @@ export const PERMISSION_GROUPS: Record<string, string[]> = {
     'STUDENT_EDIT',
     'STUDENT_DELETE',
     'GUARDIAN_MANAGE',
+    'ADMISSIONS_VIEW',
     'ADMISSIONS_MANAGE',
   ],
   Staff: ['STAFF_VIEW', 'STAFF_MANAGE'],
@@ -55,15 +56,54 @@ const TEACHER = [
   'HEALTH_VIEW',
 ];
 
+/**
+ * "Operational" permissions: actually creating, editing or recording something day to day, such as
+ * enrolling a student, marking attendance, taking a payment or selling at the canteen counter. These
+ * stay with the specific staff role responsible for that job (Class Teacher, Accountant, Canteen
+ * Manager, HR Officer...). School Admin configures the school; Proprietor oversees it; neither is
+ * meant to be doing this hands-on work themselves, so both are built by excluding this list rather
+ * than granting it.
+ */
+const OPERATIONAL_PERMISSIONS = [
+  'TIMETABLE_MANAGE',
+  'STUDENT_CREATE',
+  'STUDENT_EDIT',
+  'STUDENT_DELETE',
+  'GUARDIAN_MANAGE',
+  'ADMISSIONS_MANAGE',
+  'STAFF_MANAGE',
+  'ATTENDANCE_MARK',
+  'RESULT_ENTER',
+  'RESULT_REVIEW',
+  'RESULT_APPROVE',
+  'RESULT_PUBLISH',
+  'INVOICE_CREATE',
+  'PAYMENT_RECORD',
+  'REFUND_APPROVE',
+  'DISCOUNT_MANAGE',
+  'CANTEEN_SELL',
+  'WALLET_TOPUP',
+  'INVENTORY_MANAGE',
+  'DISCIPLINE_MANAGE',
+  'ASSIGNMENTS_MANAGE',
+  'LIBRARY_MANAGE',
+  'TRANSPORT_MANAGE',
+  'HEALTH_MANAGE',
+  'HR_MANAGE',
+  'PAYROLL_MANAGE',
+];
+/** Every read-only permission, plus exporting a report (still just looking at data, not changing it). */
+const VIEW_AND_OVERSIGHT_PERMISSIONS = [...ALL_PERMISSIONS.filter((p) => p.endsWith('_VIEW')), 'EXPORT_DATA'];
+
 /** System roles created for every new school. Schools can add their own roles on top. */
 export const SYSTEM_ROLES: Record<string, { description: string; permissions: string[] }> = {
-  'School Admin': { description: 'Full access to everything in the school', permissions: ['*'] },
+  'School Admin': {
+    description: 'Configures and manages the school (roles, features, settings) without entering day-to-day data',
+    permissions: ALL_PERMISSIONS.filter((p) => !OPERATIONAL_PERMISSIONS.includes(p)),
+  },
   Proprietor: {
-    description: 'School owner: full oversight plus billing and subscription',
-    permissions: [
-      ...ALL_PERMISSIONS.filter((p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'BACKUP_DOWNLOAD'].includes(p)),
-      'SUBSCRIPTION_MANAGE',
-    ],
+    description: 'School owner: oversight and reporting on every activity, plus billing; no data entry',
+    permissions: [...VIEW_AND_OVERSIGHT_PERMISSIONS, 'SUBSCRIPTION_MANAGE'],
   },
   Headmaster: {
     description: 'Head of school: oversight of academics, finance and operations',
