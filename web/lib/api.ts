@@ -1,6 +1,6 @@
 'use client';
 /**
- * Typed fetch wrapper for the School OS API: bearer auth, transparent refresh-token rotation,
+ * Typed fetch wrapper for the Nimdee API: bearer auth, transparent refresh-token rotation,
  * consistent ApiError, blob downloads and multi-tenant aware login.
  */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';

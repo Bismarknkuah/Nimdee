@@ -30,3 +30,14 @@ body { @apply bg-slate-50 text-slate-800 antialiased; }
   .table tbody tr:hover { @apply bg-slate-50/70; }
 }
 @media print { .no-print { display: none !important; } body { background: white; } }
+
+@layer utilities {
+  .bg-grid {
+    background-image: radial-gradient(circle, rgba(29, 78, 216, 0.14) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+  .glass { @apply border border-white/60 bg-white/70 backdrop-blur-xl; }
+}
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-delay { animation: float 6s ease-in-out infinite; animation-delay: 1.5s; }

@@ -1,1 +1,1 @@
-{ "name": "School OS", "short_name": "SchoolOS", "start_url": "/school", "display": "standalone", "background_color": "#f8fafc", "theme_color": "#1d4ed8", "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+{ "name": "Nimdee", "short_name": "Nimdee", "start_url": "/school", "display": "standalone", "background_color": "#f8fafc", "theme_color": "#1d4ed8", "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }

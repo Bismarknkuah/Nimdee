@@ -130,7 +130,7 @@ export default function RegisterSchool() {
               >
                 <Input value={f.slug} onChange={set('slug')} placeholder={slugPreview} />
               </Field>
-              <Field label="Levels your school teaches" hint="School OS is built for basic schools — pick every level you run">
+              <Field label="Levels your school teaches" hint="Nimdee is built for basic schools — pick every level you run">
                 <div className="flex flex-wrap gap-2">
                   {[
                     ['KG', 'Kindergarten'],

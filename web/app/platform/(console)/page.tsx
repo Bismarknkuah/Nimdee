@@ -12,7 +12,7 @@ export default function PlatformOverview() {
   if (loading || !d) return <Spinner />;
   return (
     <div>
-      <PageHeader title="Platform overview" subtitle="All schools on School OS" />
+      <PageHeader title="Platform overview" subtitle="All schools on Nimdee" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Schools"

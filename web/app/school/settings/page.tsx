@@ -962,7 +962,7 @@ function DataTab() {
                 [
                   'SQL',
                   'SQL restore script',
-                  'INSERT statements in dependency order to restore into a fresh School OS database.',
+                  'INSERT statements in dependency order to restore into a fresh Nimdee database.',
                 ],
               ] as const
             ).map(([fmt, label, desc]) => (

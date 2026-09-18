@@ -278,12 +278,12 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
           <img src={tenant.logoUrl} alt="" className="h-9 w-9 rounded-lg object-cover" />
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
-            {mode === 'platform' ? 'OS' : (tenant?.name ?? 'S').slice(0, 1)}
+            {mode === 'platform' ? 'N' : (tenant?.name ?? 'S').slice(0, 1)}
           </div>
         )}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">
-            {mode === 'platform' ? 'School OS' : tenant?.name}
+            {mode === 'platform' ? 'Nimdee' : tenant?.name}
           </p>
           <p className="truncate text-xs text-slate-500">{mode === 'platform' ? 'Platform console' : tenant?.code}</p>
         </div>
