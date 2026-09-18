@@ -160,7 +160,7 @@ function MarkTab({ classes }: { classes: any[] }) {
       {!offline.online && (
         <Alert kind="warning" className="mb-4">
           <WifiOff size={14} className="mr-1 inline" /> You are offline
-          {source === 'cache' ? ' — showing the downloaded class list' : ''}. Marks are saved on this device and synced
+          {source === 'cache' ? ', showing the downloaded class list' : ''}. Marks are saved on this device and synced
           later.
         </Alert>
       )}
@@ -384,7 +384,7 @@ function Attendance() {
   const [tab, setTab] = useState('mark');
   return (
     <div>
-      <PageHeader title="Attendance" subtitle="Works offline — marks sync automatically when you reconnect" />
+      <PageHeader title="Attendance" subtitle="Works offline; marks sync automatically when you reconnect" />
       <Tabs
         value={tab}
         onChange={setTab}

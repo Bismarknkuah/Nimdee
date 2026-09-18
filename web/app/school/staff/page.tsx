@@ -205,7 +205,7 @@ export default function StaffPage() {
         </div>
         <div className="mt-3">
           <Checkbox
-            label="Create a portal login now (requires email) — a temporary password will be shown once"
+            label="Create a portal login now (requires email); a temporary password will be shown once"
             checked={f.createLogin}
             onChange={set('createLogin')}
           />

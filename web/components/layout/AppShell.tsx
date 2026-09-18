@@ -389,7 +389,7 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
         </header>
         {me.isSupportSession && (
           <div className="bg-amber-500 px-4 py-1.5 text-center text-xs font-medium text-white">
-            Platform support session — every action is audited under your platform account.
+            Platform support session. Every action is audited under your platform account.
           </div>
         )}
         {subWarning && mode === 'school' && (
@@ -397,7 +397,7 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
             {sub.status === 'TRIAL'
               ? `Free trial ends ${ago(sub.trialEndsAt)}.`
               : sub.status === 'GRACE'
-                ? 'Your trial has ended — subscribe to keep access.'
+                ? 'Your trial has ended. Subscribe to keep access.'
                 : 'Your subscription payment is overdue.'}{' '}
             {can('SUBSCRIPTION_MANAGE') && (
               <Link href="/school/settings?tab=subscription" className="font-semibold underline">

@@ -399,7 +399,7 @@ export class FeesService {
             'DEBIT',
             'INVOICE',
             inv.id,
-            `Invoice ${number} — ${term.name} ${term.academicYear.name}`,
+            `Invoice ${number}: ${term.name} ${term.academicYear.name}`,
             total,
           );
         });
@@ -475,7 +475,7 @@ export class FeesService {
       'DEBIT',
       'INVOICE',
       inv.id,
-      `Invoice ${number} — ${input.lines.map((l) => l.description).join(', ')}`,
+      `Invoice ${number}: ${input.lines.map((l) => l.description).join(', ')}`,
       total,
     );
     return inv;

@@ -95,7 +95,7 @@ export function SchoolSite({
               <section key={s.id} className="mx-auto max-w-4xl px-5 py-14">
                 <h2 className="text-2xl font-bold text-slate-900">{p.title}</h2>
                 <p className="mt-3 whitespace-pre-line leading-relaxed text-slate-600">{p.body}</p>
-                {p.name && <p className="mt-3 font-medium text-slate-800">— {p.name}</p>}
+                {p.name && <p className="mt-3 font-medium text-slate-800">By {p.name}</p>}
               </section>
             );
           case 'programs':

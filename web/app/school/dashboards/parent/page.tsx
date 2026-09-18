@@ -55,7 +55,7 @@ export default function ParentDashboard() {
         <StatCard
           label="Fees balance"
           value={money(totalBalance, cur)}
-          hint={totalBalance > 0 ? 'Tap a child to pay online' : 'All settled — thank you'}
+          hint={totalBalance > 0 ? 'Tap a child to pay online' : 'All settled, thank you'}
           icon={<CreditCard size={20} />}
           tone={totalBalance > 0 ? 'red' : 'emerald'}
         />
@@ -126,7 +126,7 @@ export default function ParentDashboard() {
             </div>
             {c.latestResult ? (
               <div className="border-t border-slate-100 px-4 py-2 text-sm">
-                Latest result: <b>{c.latestResult.term}</b> — average {Number(c.latestResult.average).toFixed(1)}%{' '}
+                Latest result: <b>{c.latestResult.term}</b>, average {Number(c.latestResult.average).toFixed(1)}%{' '}
                 <Badge tone="brand">{c.latestResult.overallGrade ?? '—'}</Badge>
                 {c.latestResult.position && (
                   <span className="text-slate-500">

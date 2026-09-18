@@ -50,7 +50,7 @@ export const templates = {
     html: layout(
       brand,
       'Reset your password',
-      `<p>Hello ${esc(p.name)},</p><p>Someone asked to reset the password for this account. The link below is valid for ${p.minutes} minutes.</p><p style="color:#64748b;font-size:13px">If you did not request this, you can safely ignore this email — your password will not change.</p>`,
+      `<p>Hello ${esc(p.name)},</p><p>Someone asked to reset the password for this account. The link below is valid for ${p.minutes} minutes.</p><p style="color:#64748b;font-size:13px">If you did not request this, you can safely ignore this email. Your password will not change.</p>`,
       { label: 'Choose a new password', url: p.url },
     ),
   }),
@@ -67,7 +67,7 @@ export const templates = {
       url?: string;
     },
   ) => ({
-    subject: `Receipt ${p.receiptNumber} — ${brand.name}`,
+    subject: `Receipt ${p.receiptNumber}: ${brand.name}`,
     text: `Payment received for ${p.student}.\nAmount: ${p.amount}\nReceipt: ${p.receiptNumber}\nMethod: ${p.method}\n${p.invoice ? `Invoice: ${p.invoice}\n` : ''}Outstanding balance: ${p.balance}\nDate: ${p.date}`,
     html: layout(
       brand,

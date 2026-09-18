@@ -110,7 +110,7 @@ export default function DisciplinePage() {
     <div>
       <PageHeader
         title="Discipline & behaviour"
-        subtitle="Incidents, sanctions and demerit points — every record is audited"
+        subtitle="Incidents, sanctions and demerit points. Every record is audited"
         actions={
           can('DISCIPLINE_MANAGE') && (
             <Button onClick={openNew}>

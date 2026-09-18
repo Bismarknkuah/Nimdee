@@ -13,7 +13,7 @@ export default function AuditPage() {
   const { data, loading } = useApi(`/audit${qs({ search: q, entity, page, pageSize: 50 })}`, [q, entity, page]);
   return (
     <div>
-      <PageHeader title="Audit log" subtitle="Every sensitive action, who did it and what changed — immutable" />
+      <PageHeader title="Audit log" subtitle="Every sensitive action, who did it and what changed, kept immutable" />
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <Field label="Search actor or action">
           <SearchBox

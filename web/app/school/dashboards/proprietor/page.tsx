@@ -19,7 +19,7 @@ import { BarSeries, Donut } from '@/components/charts';
 import { Badge, Card, KeyStat, PageHeader, ProgressBar, SectionTitle, Spinner, StatCard } from '@/components/ui';
 
 /**
- * Proprietor dashboard — an owner's view of the school: the business picture rather than the
+ * Proprietor dashboard: an owner's view of the school. The business picture rather than the
  * operational one. Enrolment and revenue trends, subscription and billing, staff headcount and
  * a light touch on what's happening, with links out to the full reports and settings.
  */
@@ -98,7 +98,7 @@ export default function ProprietorDashboard() {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <Card title="Revenue — last 12 months" className="lg:col-span-2">
+        <Card title="Revenue: last 12 months" className="lg:col-span-2">
           {finance?.collectionsByMonth?.length ? (
             <BarSeries
               data={finance.collectionsByMonth}
@@ -117,13 +117,13 @@ export default function ProprietorDashboard() {
           {ageingChart.length ? (
             <Donut data={ageingChart} />
           ) : (
-            <p className="py-8 text-center text-sm text-slate-500">Nothing outstanding — fully collected.</p>
+            <p className="py-8 text-center text-sm text-slate-500">Nothing outstanding, fully collected.</p>
           )}
         </Card>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <Card title="Enrolment — admissions by month" className="lg:col-span-2">
+        <Card title="Enrolment: admissions by month" className="lg:col-span-2">
           {enrolment?.admissionsByMonth?.length ? (
             <BarSeries data={enrolment.admissionsByMonth} x="month" bars={[{ key: 'count', name: 'New students' }]} />
           ) : (

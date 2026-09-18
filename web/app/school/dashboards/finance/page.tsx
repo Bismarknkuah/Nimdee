@@ -70,7 +70,7 @@ export default function FinanceDashboard() {
         </>
       )}
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <Card title="Collections — last 30 days" className="lg:col-span-2">
+        <Card title="Collections: last 30 days" className="lg:col-span-2">
           {d.trend.length ? (
             <LineSeries data={d.trend} x="date" lines={[{ key: 'amount', name: `Received (${cur})` }]} />
           ) : (

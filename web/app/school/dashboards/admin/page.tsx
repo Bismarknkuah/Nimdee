@@ -35,7 +35,7 @@ import {
 } from '@/components/ui';
 
 /**
- * School administrator dashboard — the whole school on one screen:
+ * School administrator dashboard: the whole school on one screen:
  * headline KPIs, attendance, finance, academics, welfare, operations and an action list.
  */
 export default function AdminDashboard() {
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
         subtitle={
           d.term
             ? `${d.term.year} · ${d.term.name} · ${fmtDate(d.term.startDate)} – ${fmtDate(d.term.endDate)}`
-            : 'No current term configured — set one under Academics'
+            : 'No current term configured. Set one under Academics'
         }
         actions={
           <span className="text-xs text-slate-500">
@@ -193,12 +193,12 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <Card title="Attendance — last 7 days" className="lg:col-span-2">
+        <Card title="Attendance: last 7 days" className="lg:col-span-2">
           {d.attendanceTrend?.length ? (
             <AttendanceTrend data={d.attendanceTrend} />
           ) : (
             <p className="py-8 text-center text-sm text-slate-500">
-              No attendance recorded yet — teachers mark it under Attendance (works offline).
+              No attendance recorded yet. Teachers mark it under Attendance (works offline).
             </p>
           )}
         </Card>
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
             </ul>
           ) : (
             <p className="p-6 text-center text-sm text-slate-500">
-              All clear — nothing needs your attention right now.
+              All clear, nothing needs your attention right now.
             </p>
           )}
         </Card>

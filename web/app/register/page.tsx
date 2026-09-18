@@ -98,7 +98,7 @@ export default function RegisterSchool() {
           </div>
           <p className="mt-4 text-xs text-slate-500">
             We&apos;ve already set up your classes ({f.levels.map((l: string) => (l === 'KG' ? 'Kindergarten' : l === 'PRIMARY' ? 'Primary' : 'JHS')).join(', ')}) and the GES
-            standards-based subjects for each — ready under Academics.
+            standards-based subjects for each, ready under Academics.
           </p>
           <Link
             href={`/login`}
@@ -116,7 +116,7 @@ export default function RegisterSchool() {
       <div className="mx-auto max-w-2xl px-4">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-slate-900">Register your school</h1>
-          <p className="text-sm text-slate-500">Free trial — no card required. Step {step} of 3</p>
+          <p className="text-sm text-slate-500">Free trial, no card required. Step {step} of 3</p>
         </div>
         <div className="card p-6">
           {step === 1 && (
@@ -126,11 +126,11 @@ export default function RegisterSchool() {
               </Field>
               <Field
                 label="Portal address"
-                hint={`Your portal will be ${slugPreview || 'your-school'}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'schoolos.app'} — you can add your own domain later`}
+                hint={`Your portal will be ${slugPreview || 'your-school'}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'schoolos.app'}, you can add your own domain later`}
               >
                 <Input value={f.slug} onChange={set('slug')} placeholder={slugPreview} />
               </Field>
-              <Field label="Levels your school teaches" hint="Nimdee is built for basic schools — pick every level you run">
+              <Field label="Levels your school teaches" hint="Nimdee is built for basic schools. Pick every level you run">
                 <div className="flex flex-wrap gap-2">
                   {[
                     ['KG', 'Kindergarten'],

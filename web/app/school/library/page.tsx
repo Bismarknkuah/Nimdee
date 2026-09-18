@@ -97,7 +97,7 @@ export default function LibraryPage() {
   const doReturn = async (loan: any, lost = false) => {
     try {
       const r = await api.post(`/library/loans/${loan.id}/return`, { lost, finePaid: false });
-      toast.success(lost ? 'Marked lost' : Number(r.fine) > 0 ? `Returned — fine ${money(r.fine, cur)}` : 'Returned');
+      toast.success(lost ? 'Marked lost' : Number(r.fine) > 0 ? `Returned, fine ${money(r.fine, cur)}` : 'Returned');
       reloadAll();
     } catch (e: any) {
       toast.error(e.message);
@@ -422,7 +422,7 @@ export default function LibraryPage() {
                 placeholder="Select an available book"
                 options={(books.data?.items ?? [])
                   .filter((b: any) => b.copiesAvailable > 0)
-                  .map((b: any) => ({ value: b.id, label: `${b.title} — ${b.author}` }))}
+                  .map((b: any) => ({ value: b.id, label: `${b.title} by ${b.author}` }))}
               />
             </Field>
           ) : (

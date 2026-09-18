@@ -93,7 +93,7 @@ export default function AcademicsPage() {
         <Card title="Set up standard KG / Primary / JHS classes" className="mb-4">
           <p className="mb-3 text-sm text-slate-600">
             Create the standard classes and GES standards-based subjects for the levels this school runs. Existing
-            classes and subjects are left untouched — this only adds what&apos;s missing.
+            classes and subjects are left untouched; this only adds what&apos;s missing.
           </p>
           <div className="mb-3 flex flex-wrap gap-1.5">
             {ghana.data.classes

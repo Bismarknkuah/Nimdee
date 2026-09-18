@@ -22,13 +22,13 @@ const FEATURES = [
     icon: GraduationCap,
     tone: 'text-blue-600 bg-blue-50',
     title: 'Academics & results',
-    text: 'Classes, subjects, assessments and computed grades — letter grades for KG/Primary and the BECE scale for JHS — plus branded report cards and an approval workflow.',
+    text: 'Classes, subjects, assessments and computed grades: letter grades for KG/Primary and the BECE scale for JHS, plus branded report cards and an approval workflow.',
   },
   {
     icon: CloudOff,
     tone: 'text-emerald-600 bg-emerald-50',
     title: 'Works offline',
-    text: "Teachers mark attendance without connectivity. Changes queue on the device and sync safely the moment it's back online — conflicts resolved by your rules.",
+    text: "Teachers mark attendance without connectivity. Changes queue on the device and sync safely the moment it's back online, with conflicts resolved by your rules.",
   },
   {
     icon: Wallet,
@@ -52,7 +52,7 @@ const FEATURES = [
     icon: BadgeCheck,
     tone: 'text-rose-600 bg-rose-50',
     title: 'Your own website',
-    text: 'A branded school website on your own domain with online admissions built in — no developer needed to launch it.',
+    text: 'A branded school website on your own domain with online admissions built in. No developer needed to launch it.',
   },
 ];
 
@@ -60,7 +60,7 @@ const STEPS = [
   {
     n: '01',
     title: 'Register your school',
-    text: "Tell us your levels — KG, Primary, JHS — and whether you're day, boarding, or both.",
+    text: "Tell us your levels (KG, Primary, JHS) and whether you're day, boarding, or both.",
   },
   {
     n: '02',
@@ -70,7 +70,7 @@ const STEPS = [
   {
     n: '03',
     title: 'Invite your team',
-    text: 'Add teachers, staff and parents — everyone gets a role-based login on the very same day.',
+    text: 'Add teachers, staff and parents. Everyone gets a role-based login on the very same day.',
   },
 ];
 
@@ -207,7 +207,7 @@ export default function Landing() {
               Run your school beautifully <span className="text-brand">online or offline</span>
             </h1>
             <p className="mt-5 max-w-lg text-lg text-slate-600">
-              Admissions, attendance, fees, results, canteen, timetable, communication and a parent portal — one
+              Admissions, attendance, fees, results, canteen, timetable, communication and a parent portal: one
               platform that keeps working when the internet doesn&apos;t.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -283,7 +283,7 @@ export default function Landing() {
           <CalendarCheck2 className="pointer-events-none absolute -bottom-6 -right-6 h-32 w-32 text-white/10" />
           <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Ready to modernize your school?</h2>
           <p className="mx-auto mt-3 max-w-xl text-brand-soft/90">
-            Free trial, no card required — or explore every role first with the live demo school.
+            Free trial, no card required, or explore every role first with the live demo school.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link href="/register" className="btn bg-white px-5 py-3 text-base text-brand-dark hover:bg-brand-soft">

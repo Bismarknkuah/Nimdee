@@ -128,7 +128,7 @@ export class CommunicationsService {
     if (a.channels.includes('SMS'))
       delivery.sms = await this.providers.sendSms(
         phones,
-        `${snap.name}: ${a.title} — ${a.body}`.slice(0, 480),
+        `${snap.name}: ${a.title}. ${a.body}`.slice(0, 480),
         snap.settings.communication.smsSenderId,
       );
     if (a.channels.includes('EMAIL'))

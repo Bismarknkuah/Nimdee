@@ -95,8 +95,8 @@ export default function TeacherDashboard() {
           Attendance not yet marked today for <b>{unmarked.map((c: any) => c.name).join(', ')}</b>.{' '}
           <Link href={`/school/attendance?classId=${unmarked[0].id}`} className="font-semibold underline">
             Mark now
-          </Link>{' '}
-          — it works even without internet.
+          </Link>.{' '}
+          It works even without internet.
         </div>
       )}
       {d.pendingLeave && (

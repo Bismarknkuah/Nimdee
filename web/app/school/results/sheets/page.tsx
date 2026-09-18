@@ -157,7 +157,7 @@ function Sheets() {
       )}
       {classId && sheets && !sheets.length && (
         <Alert kind="info" className="mb-4">
-          No result sheets for this class yet — enter marks and click “Compute results” on the assessments page.
+          No result sheets for this class yet. Enter marks and click “Compute results” on the assessments page.
         </Alert>
       )}
       {classId && (

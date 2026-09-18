@@ -105,7 +105,7 @@ export default function EventsPage() {
     <div>
       <PageHeader
         title="Calendar & events"
-        subtitle="Holidays, exams, meetings, sports and trips — shared with the right audience"
+        subtitle="Holidays, exams, meetings, sports and trips, shared with the right audience"
         actions={
           manage && (
             <Button onClick={() => openNew(selected)}>

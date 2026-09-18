@@ -116,7 +116,7 @@ export class HealthService {
       await this.fees.notifyGuardians(
         dto.studentId,
         `${student.firstName} visited the school clinic`,
-        `${dto.complaint}${dto.treatment ? ` — ${dto.treatment}` : ''}${dto.referredOut ? '. The student was referred to a hospital; please contact the school immediately.' : ''}`,
+        `${dto.complaint}${dto.treatment ? `. ${dto.treatment}` : ''}${dto.referredOut ? '. The student was referred to a hospital; please contact the school immediately.' : ''}`,
         { visitId: v.id },
       );
     }

@@ -4,7 +4,7 @@ import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: { default: 'Nimdee', template: '%s · Nimdee' },
-  description: 'The all-in-one platform for Ghana\'s KG, Primary and JHS schools — academics, attendance, fees, results, canteen and a parent portal that works offline.',
+  description: 'The all-in-one platform for Ghana\'s KG, Primary and JHS schools: academics, attendance, fees, results, canteen and a parent portal that works offline.',
   manifest: '/manifest.json',
 };
 export const viewport: Viewport = { themeColor: '#1d4ed8', width: 'device-width', initialScale: 1 };

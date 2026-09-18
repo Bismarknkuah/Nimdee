@@ -341,7 +341,7 @@ export default function PlatformSchoolDetail() {
                             const reference = prompt('Payment reference (bank/MoMo)') ?? '';
                             act(
                               () => api.post(`/platform/subscription-invoices/${i.id}/mark-paid`, { reference }),
-                              'Invoice marked paid — plan applied',
+                              'Invoice marked paid, plan applied',
                             );
                           }}
                         >

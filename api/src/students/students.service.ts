@@ -144,7 +144,7 @@ export class StudentsService {
     const settings = await this.tenants.settings(tid());
     const residency = settings.school?.residency ?? 'DAY_AND_BOARDING';
     if (residency === 'DAY') {
-      if (isBoarding) throw new BadRequestException('This is a day school — students cannot be registered as boarders. Change residency under Settings → Profile.');
+      if (isBoarding) throw new BadRequestException('This is a day school. Students cannot be registered as boarders. Change residency under Settings > Profile.');
       return isBoarding === undefined ? undefined : false;
     }
     if (residency === 'BOARDING') return isBoarding === undefined ? undefined : true;
@@ -319,7 +319,7 @@ export class StudentsService {
     const snap = await this.tenants.get(tid());
     if (snap.code !== tenantCode) throw new ForbiddenException('This ID card belongs to another school');
     if (this.sign(tenantCode, studentId) !== sig)
-      throw new BadRequestException('QR signature is invalid — possible forged card');
+      throw new BadRequestException('QR signature is invalid, possible forged card');
     const s = await this.prisma.db.student.findFirst({
       where: { studentId },
       include: { class: { select: { id: true, name: true } }, wallet: { select: { balance: true, isActive: true } } },

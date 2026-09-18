@@ -83,7 +83,7 @@ function ProfileTab() {
         <Field label="School name">
           <Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </Field>
-        <Field label="Ownership" hint="This platform is built for KG/Primary/JHS basic schools — set the levels you teach under Rules engine">
+        <Field label="Ownership" hint="This platform is built for KG/Primary/JHS basic schools. Set the levels you teach under Rules engine">
           <Select
             value={f.type}
             onChange={(e) => setF({ ...f, type: e.target.value })}
@@ -280,7 +280,7 @@ function RulesTab() {
   return (
     <div className="space-y-4">
       <Alert kind="info">
-        These rules drive the whole system for your school — grading, promotion, attendance, invoicing, offline sync and
+        These rules drive the whole system for your school: grading, promotion, attendance, invoicing, offline sync and
         canteen behaviour. Every change is audited.
       </Alert>
       <Card title="School levels & residency">
@@ -518,7 +518,7 @@ function RulesTab() {
             label="Paystack secret key"
             hint={
               s.finance.paystackSecretKeySet
-                ? 'A key is stored — enter a new one to replace it'
+                ? 'A key is stored. Enter a new one to replace it'
                 : 'sk_live_… (stored encrypted, never shown)'
             }
           >
@@ -911,8 +911,8 @@ function SubscriptionTab() {
                 value={cycle}
                 onChange={(e) => setCycle(e.target.value as any)}
                 options={[
-                  { value: 'YEARLY', label: `Yearly — ${money(open.priceYearly, open.currency)}` },
-                  { value: 'MONTHLY', label: `Monthly — ${money(open.priceMonthly, open.currency)}` },
+                  { value: 'YEARLY', label: `Yearly: ${money(open.priceYearly, open.currency)}` },
+                  { value: 'MONTHLY', label: `Monthly: ${money(open.priceMonthly, open.currency)}` },
                 ]}
               />
             </Field>
@@ -947,7 +947,7 @@ function DataTab() {
   return (
     <div className="space-y-4">
       <Alert kind="info">
-        <b>Your school owns its data.</b> Download everything the school has ever stored — students, guardians, staff,
+        <b>Your school owns its data.</b> Download everything the school has ever stored: students, guardians, staff,
         attendance, fees and payments, results, canteen, messages and more. Password hashes, login sessions and payment
         keys are never included. Every download is recorded below and in the audit log.
       </Alert>
@@ -956,9 +956,9 @@ function DataTab() {
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
-                ['ALL', 'Complete backup', 'JSON + CSV + SQL in one ZIP — the recommended full backup.'],
+                ['ALL', 'Complete backup', 'JSON + CSV + SQL in one ZIP, the recommended full backup.'],
                 ['JSON', 'JSON', 'One JSON file per table, machine-readable and re-importable.'],
-                ['CSV', 'Spreadsheets (CSV)', 'One CSV per table — opens in Excel or Google Sheets.'],
+                ['CSV', 'Spreadsheets (CSV)', 'One CSV per table, opens in Excel or Google Sheets.'],
                 [
                   'SQL',
                   'SQL restore script',

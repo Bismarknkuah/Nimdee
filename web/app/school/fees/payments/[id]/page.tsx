@@ -81,7 +81,7 @@ export default function PaymentDetail() {
             ['Notes', p.notes],
             ['Account balance after', money(p.student.account?.balance ?? 0, cur)],
             ...(p.status === 'REVERSED'
-              ? [['Reversed', `${fmtDateTime(p.reversedAt)} — ${p.reversalReason}`] as [string, any]]
+              ? [['Reversed', `${fmtDateTime(p.reversedAt)}: ${p.reversalReason}`] as [string, any]]
               : []),
           ]}
         />

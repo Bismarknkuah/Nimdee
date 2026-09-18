@@ -225,7 +225,7 @@ export class DocumentsController {
   @Get('students/:id/transcript.pdf')
   @RequireFeature('RESULTS')
   @RequirePermissions('RESULT_VIEW')
-  @ApiOperation({ summary: 'Academic transcript — every published term for a student' })
+  @ApiOperation({ summary: 'Academic transcript: every published term for a student' })
   async transcript(@Param('id') id: string, @Res() res: Response) {
     const db = this.prisma.db;
     const student = await db.student.findUnique({

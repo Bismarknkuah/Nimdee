@@ -506,7 +506,7 @@ function Child() {
                   {!discipline.data.incidents.length && (
                     <tr>
                       <td colSpan={6} className="py-6 text-center text-slate-500">
-                        No behaviour incidents — well done!
+                        No behaviour incidents. Well done!
                       </td>
                     </tr>
                   )}

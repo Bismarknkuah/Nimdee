@@ -307,7 +307,7 @@ export class DataExportService {
       { name: 'manifest.json' },
     );
     archive.append(
-      `Nimdee data export — ${tenant.name}\n\nFolders:\n  json/   one JSON array per table (School.json holds the school profile, branding, rules and website)\n  csv/    the same tables as CSV (UTF-8 with BOM, opens in Excel)\n  sql/    backup.sql restores this school into a fresh Nimdee database; schema.prisma documents every table\n  manifest.json  what was exported and when\n\nSensitive values (payment gateway secrets, password hashes) are never included.\nThis export was recorded in your audit log.\n`,
+      `Nimdee data export: ${tenant.name}\n\nFolders:\n  json/   one JSON array per table (School.json holds the school profile, branding, rules and website)\n  csv/    the same tables as CSV (UTF-8 with BOM, opens in Excel)\n  sql/    backup.sql restores this school into a fresh Nimdee database; schema.prisma documents every table\n  manifest.json  what was exported and when\n\nSensitive values (payment gateway secrets, password hashes) are never included.\nThis export was recorded in your audit log.\n`,
       { name: 'README.txt' },
     );
     await archive.finalize();

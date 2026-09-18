@@ -115,7 +115,7 @@ export function StudentForm({
         )}
         {residency !== 'DAY_AND_BOARDING' && (
           <div className="flex items-end pb-2 text-xs text-slate-500">
-            {residency === 'BOARDING' ? 'All students at this school are boarders.' : 'This is a day school — no boarding students.'}
+            {residency === 'BOARDING' ? 'All students at this school are boarders.' : 'This is a day school. No boarding students.'}
           </div>
         )}
         <Field label="Previous school">

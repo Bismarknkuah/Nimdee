@@ -163,7 +163,7 @@ export class LibraryService {
         });
         if (open >= 3) throw new BadRequestException('Student already has 3 books on loan');
         const overdue = await tx.libraryLoan.count({ where: { studentId: dto.studentId, status: 'OVERDUE' } });
-        if (overdue) throw new BadRequestException('Student has overdue books — return them first');
+        if (overdue) throw new BadRequestException('Student has overdue books. Return them first');
       }
       await tx.libraryBook.update({ where: { id: book.id }, data: { copiesAvailable: { decrement: 1 } } });
       return tx.libraryLoan.create({

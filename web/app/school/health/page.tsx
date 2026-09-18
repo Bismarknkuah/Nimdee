@@ -116,7 +116,7 @@ export default function HealthPage() {
     <div>
       <PageHeader
         title="School clinic"
-        subtitle="Sick-bay visits, allergies, conditions and emergency contacts — confidential"
+        subtitle="Sick-bay visits, allergies, conditions and emergency contacts, kept confidential"
         actions={
           can('HEALTH_MANAGE') && (
             <Button

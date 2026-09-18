@@ -68,7 +68,7 @@ export default function AssignmentsPage() {
         status: f.status,
       });
       toast.success(
-        f.status === 'PUBLISHED' ? 'Assignment published — parents and students have been notified' : 'Draft saved',
+        f.status === 'PUBLISHED' ? 'Assignment published. Parents and students have been notified' : 'Draft saved',
       );
       setOpen(false);
       reload();

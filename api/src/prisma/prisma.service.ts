@@ -23,7 +23,7 @@ pgPool.on('connect', (client) => {
     if (!roleWarned) {
       roleWarned = true;
       console.warn(
-        `[prisma] Could not SET ROLE ${APP_ROLE} (${e.message}). Row-Level Security is NOT binding — run the migrations.`,
+        `[prisma] Could not SET ROLE ${APP_ROLE} (${e.message}). Row-Level Security is NOT binding, run the migrations.`,
       );
     }
   });

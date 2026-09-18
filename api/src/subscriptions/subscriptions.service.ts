@@ -138,7 +138,7 @@ export class SubscriptionsService {
           `Subscription ${next.status.toLowerCase().replace('_', ' ')}`,
           next.status === 'SUSPENDED'
             ? 'Your school has been suspended because the subscription expired. Settle the invoice to reactivate.'
-            : `Your subscription is in ${next.status.toLowerCase()} — please renew within ${GRACE_DAYS} days to avoid interruption.`,
+            : `Your subscription is in ${next.status.toLowerCase()}. Please renew within ${GRACE_DAYS} days to avoid interruption.`,
         );
       } else if (s.status === 'ACTIVE' || s.status === 'TRIAL') {
         const end = s.status === 'TRIAL' ? s.trialEndsAt : s.currentPeriodEnd;
