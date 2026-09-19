@@ -250,15 +250,19 @@ const PORTAL_NAV: NavGroup[] = [
   },
 ];
 /**
- * One flat, permission- and feature-aware list of shortcuts for every role, shown from the header
- * quick-actions menu on every page (not just the dashboard). The same can()/has() filter used for the
- * sidebar naturally scopes this down to what each role can actually do, so it needs no per-role branching:
- * a teacher sees "Mark attendance" and "Enter marks", a cashier sees "Canteen sale", a parent or student
- * sees only "Messages" and "Calendar" since they hold none of the staff permissions below.
+ * One flat, permission- and feature-aware list of shortcuts for every staff role, shown from the
+ * header quick-actions menu on every page (not just the dashboard). Parents and students get their
+ * own separate list below, since their access model is entirely different from staff RBAC.
  */
 const QUICK_LINKS: NavItem[] = [
   { href: '/school/students/new', label: 'Enrol student', icon: UserPlus, perms: ['STUDENT_CREATE'] },
-  { href: '/school/attendance', label: 'Mark attendance', icon: ClipboardCheck, feature: 'ATTENDANCE' },
+  {
+    href: '/school/attendance',
+    label: 'Mark attendance',
+    icon: ClipboardCheck,
+    perms: ['ATTENDANCE_MARK'],
+    feature: 'ATTENDANCE',
+  },
   {
     href: '/school/fees/payments/new',
     label: 'Record payment',
@@ -298,11 +302,50 @@ const QUICK_LINKS: NavItem[] = [
     perms: ['CANTEEN_SELL'],
     feature: 'CANTEEN',
   },
+  {
+    href: '/school/canteen/plans',
+    label: 'Meal plans',
+    icon: ClipboardList,
+    perms: ['CANTEEN_MANAGE'],
+    feature: 'CANTEEN',
+  },
+  {
+    href: '/school/canteen/pay',
+    label: 'Feeding payment',
+    icon: Wallet,
+    perms: ['CANTEEN_MANAGE'],
+    feature: 'CANTEEN',
+  },
   { href: '/school/canteen/wallets', label: 'Wallet top-up', icon: Wallet, perms: ['WALLET_TOPUP'] },
   { href: '/school/library', label: 'Library', icon: BookMarked, perms: ['LIBRARY_VIEW'], feature: 'LIBRARY' },
   { href: '/school/health', label: 'Clinic', icon: HeartPulse, perms: ['HEALTH_VIEW'], feature: 'HEALTH' },
   { href: '/school/staff', label: 'Staff', icon: Users, perms: ['STAFF_VIEW'] },
+  { href: '/school/expenses', label: 'Record expense', icon: Receipt, perms: ['EXPENSE_CREATE'], feature: 'FEES' },
+  { href: '/school/expenses', label: 'Approve expenses', icon: ClipboardCheck, perms: ['EXPENSE_APPROVE'], feature: 'FEES' },
+  {
+    href: '/school/academics?tab=responsibilities',
+    label: 'Assign form/house master',
+    icon: Users,
+    perms: ['ACADEMIC_MANAGE'],
+  },
+  { href: '/school/users', label: 'Roles & features', icon: ShieldCheck, perms: ['ROLES_MANAGE', 'SCHOOL_MANAGE'] },
+  { href: '/school/website', label: 'Website builder', icon: LayoutDashboard, perms: ['SCHOOL_MANAGE'] },
+  { href: '/school/reports', label: 'Reports', icon: FileBarChart, perms: ['REPORTS_VIEW'] },
+  { href: '/school/audit', label: 'Audit log', icon: ShieldCheck, perms: ['AUDIT_VIEW'] },
+  {
+    href: '/school/settings?tab=subscription',
+    label: 'Subscription',
+    icon: CreditCard,
+    perms: ['SUBSCRIPTION_MANAGE'],
+  },
   { href: '/school/settings?tab=data', label: 'Backup data', icon: RefreshCw, perms: ['SCHOOL_MANAGE'] },
+];
+/** Parents and students hold no staff RBAC permissions at all, so they need their own short, always-
+ *  relevant list rather than being filtered out of the staff one down to almost nothing. */
+const PORTAL_QUICK_LINKS: NavItem[] = [
+  { href: '/school/portal/notifications', label: 'Notifications', icon: Bell },
+  { href: '/school/messages', label: 'Messages', icon: MessageSquare, feature: 'MESSAGING' },
+  { href: '/school/events', label: 'Calendar', icon: CalendarDays, feature: 'EVENTS' },
 ];
 const PLATFORM_NAV: NavGroup[] = [
   {
@@ -457,10 +500,10 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
       items: g.items.filter((i) => (!i.perms || can(...i.perms)) && (!i.feature || has(i.feature))),
     })).filter((g) => g.items.length);
   }, [mode, role, can, has]);
-  const quickLinks = useMemo(
-    () => QUICK_LINKS.filter((i) => (!i.perms || can(...i.perms)) && (!i.feature || has(i.feature))),
-    [can, has],
-  );
+  const quickLinks = useMemo(() => {
+    const source = role === 'parent' || role === 'student' ? PORTAL_QUICK_LINKS : QUICK_LINKS;
+    return source.filter((i) => (!i.perms || can(...i.perms)) && (!i.feature || has(i.feature)));
+  }, [role, can, has]);
   const [quickOpen, setQuickOpen] = useState(false);
 
   if (loading || !me) return <Spinner className="h-screen" />;
