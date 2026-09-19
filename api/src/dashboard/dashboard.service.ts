@@ -288,7 +288,7 @@ export class DashboardService {
       db.notification.count({ where: { userId: c.userId, readAt: null } }),
     ]);
     const classIds = [...new Set([...classTeacherOf.map((k) => k.id), ...teaching.map((t) => t.classId)])];
-    const [marked, weekMarks, assessments, sheets, students] = await Promise.all([
+    const [marked, weekMarks, assessments, sheets, students, myAssignments] = await Promise.all([
       classIds.length
         ? db.attendance.groupBy({
             by: ['classId'],
@@ -323,6 +323,12 @@ export class DashboardService {
         ? db.student.findMany({
             where: { classId: { in: classTeacherOf.map((k) => k.id) }, status: 'ACTIVE' },
             select: { id: true, firstName: true, lastName: true, classId: true, dateOfBirth: true },
+          })
+        : [],
+      c.staffId
+        ? db.assignment.findMany({
+            where: { teacherId: c.staffId, status: 'PUBLISHED' },
+            include: { _count: { select: { submissions: { where: { status: { in: ['SUBMITTED', 'LATE'] } } } } } },
           })
         : [],
     ]);
@@ -389,6 +395,14 @@ export class DashboardService {
     );
     return {
       term: term ? { id: term.id, name: term.name, progress: this.termProgress(term) } : null,
+      resultsByClass: classTeacherOf.map((k) => ({
+        classId: k.id,
+        name: k.name,
+        byStatus: Object.fromEntries(sheets.filter((s) => s.classId === k.id).map((s) => [s.status, s._count._all])),
+      })),
+      assignmentsDue: myAssignments
+        .filter((a) => a._count.submissions > 0)
+        .map((a) => ({ id: a.id, title: a.title, toGrade: a._count.submissions })),
       classTeacherOf: classTeacherOf.map((k) => ({
         id: k.id,
         name: k.name,

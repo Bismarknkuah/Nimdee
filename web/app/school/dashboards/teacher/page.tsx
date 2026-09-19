@@ -438,7 +438,7 @@ export default function TeacherDashboard() {
         </Card>
       </div>
 
-      {d.resultsByClass.length > 0 && (
+      {d.resultsByClass?.length > 0 && (
         <>
           <SectionTitle>Results workflow (my classes)</SectionTitle>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
