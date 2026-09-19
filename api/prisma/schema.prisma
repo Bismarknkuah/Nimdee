@@ -229,6 +229,9 @@ model User {
   lastName           String
   phone              String?
   avatarUrl          String?
+  bio                String?
+  address            String?
+  dateOfBirth        DateTime?  @db.Date
   userType           UserType   @default(STAFF)
   isActive           Boolean    @default(true)
   mustChangePassword Boolean    @default(false)

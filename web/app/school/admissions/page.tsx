@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Check, Copy } from 'lucide-react';
 import { api, qs } from '@/lib/api';
 import { useAcademic, classOptions } from '@/lib/academic';
 import { useApi, useDebounce } from '@/lib/hooks';
@@ -7,9 +8,9 @@ import { fmtDate, title } from '@/lib/format';
 import { portalUrlFor } from '@/lib/tenant';
 import { useAuth } from '@/lib/auth';
 import {
-  Alert,
   Badge,
   Button,
+  Card,
   DataTable,
   Field,
   Input,
@@ -22,6 +23,50 @@ import {
 } from '@/components/ui';
 
 const STATUSES = ['SUBMITTED', 'UNDER_REVIEW', 'INTERVIEW', 'ASSESSMENT', 'APPROVED', 'REJECTED', 'ADMITTED'];
+
+function AdmissionLinkCard() {
+  const { me } = useAuth();
+  const { data: profile } = useApi<any>('/school/profile');
+  const [copied, setCopied] = useState('');
+  if (!me?.tenant) return null;
+  const primaryCustom = (profile?.domains ?? []).find((d: any) => d.type === 'CUSTOM' && d.verified && d.isPrimary);
+  const links = [
+    ...(primaryCustom ? [{ label: 'Your domain', url: `https://${primaryCustom.domain}/apply` }] : []),
+    { label: 'Nimdee address', url: `${portalUrlFor(me.tenant.slug)}/apply` },
+  ];
+  const copy = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopied(url);
+    setTimeout(() => setCopied(''), 1500);
+  };
+  return (
+    <Card title="Your admissions link" className="mb-4">
+      <p className="mb-3 text-sm text-slate-500">
+        Share this with parents on WhatsApp, flyers or social media. Approved applications become
+        students with one click.
+      </p>
+      <div className="space-y-2">
+        {links.map((l) => (
+          <div key={l.url} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2.5">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-400">{l.label}</p>
+              <p className="truncate text-sm font-medium text-slate-800">{l.url}</p>
+            </div>
+            <Button variant="secondary" onClick={() => copy(l.url)}>
+              {copied === l.url ? <Check size={15} /> : <Copy size={15} />}
+              {copied === l.url ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+        ))}
+      </div>
+      {!primaryCustom && (
+        <p className="mt-3 text-xs text-slate-400">
+          Want a link on your own domain instead? Set one up under Settings &gt; Domains.
+        </p>
+      )}
+    </Card>
+  );
+}
 
 export default function AdmissionsPage() {
   const toast = useToast();
@@ -51,10 +96,7 @@ export default function AdmissionsPage() {
   return (
     <div>
       <PageHeader title="Admissions" subtitle={data ? `${data.total} applications` : undefined} />
-      <Alert kind="info" className="mb-4">
-        Applicants apply online at <b>{me?.tenant ? `${portalUrlFor(me.tenant.slug)}/apply` : '/apply'}</b>. Approved
-        applications become students with one click.
-      </Alert>
+      <AdmissionLinkCard />
       <div className="mb-4 flex flex-wrap gap-2">
         {['', ...STATUSES].map((s) => (
           <button

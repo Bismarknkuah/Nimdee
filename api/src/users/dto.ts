@@ -2,6 +2,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsDateString,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -29,6 +30,9 @@ export class UpdateMyProfileDto {
   @IsOptional() @IsString() @MaxLength(120) name?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
   @IsOptional() @IsString() @MaxLength(2_500_000) avatarUrl?: string;
+  @IsOptional() @IsString() @MaxLength(500) bio?: string;
+  @IsOptional() @IsString() @MaxLength(250) address?: string;
+  @IsOptional() @IsDateString() dateOfBirth?: string;
 }
 
 export class CreateUserDto {

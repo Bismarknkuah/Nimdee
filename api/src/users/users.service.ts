@@ -135,6 +135,9 @@ export class UsersService {
         lastName: dto.lastName?.trim() || undefined,
         phone: dto.phone === '' ? null : dto.phone,
         avatarUrl: dto.avatarUrl === '' ? null : dto.avatarUrl,
+        bio: dto.bio === '' ? null : dto.bio,
+        address: dto.address === '' ? null : dto.address,
+        dateOfBirth: dto.dateOfBirth === '' ? null : dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
       },
     });
     await this.audit.log({ action: 'PROFILE_UPDATED', entity: 'User', entityId: u.id, after: dto });
@@ -145,6 +148,9 @@ export class UsersService {
       lastName: u.lastName,
       phone: u.phone,
       avatarUrl: u.avatarUrl,
+      bio: u.bio,
+      address: u.address,
+      dateOfBirth: u.dateOfBirth,
     };
   }
 

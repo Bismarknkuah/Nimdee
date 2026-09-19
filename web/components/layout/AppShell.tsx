@@ -46,7 +46,7 @@ import { api } from '@/lib/api';
 import { dashboardFor, useAuth } from '@/lib/auth';
 import { useOffline } from '@/lib/offline';
 import { ago } from '@/lib/format';
-import { Badge, Button, Field, ImageUpload, Input, Modal, Spinner, useToast } from '@/components/ui';
+import { Badge, Button, Field, ImageUpload, Input, Modal, Spinner, Textarea, useToast } from '@/components/ui';
 
 interface NavItem {
   href: string;
@@ -330,6 +330,9 @@ function ProfileModal({
     name: me.user.name ?? '',
     phone: me.user.phone ?? '',
     avatarUrl: me.user.avatarUrl ?? '',
+    bio: me.user.bio ?? '',
+    address: me.user.address ?? '',
+    dateOfBirth: me.user.dateOfBirth ? String(me.user.dateOfBirth).slice(0, 10) : '',
   });
   const [busy, setBusy] = useState(false);
   const save = async () => {
@@ -377,8 +380,25 @@ function ProfileModal({
           <Field label="Last name">
             <Input value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />
           </Field>
-          <Field label="Phone" className="sm:col-span-2">
+          <Field label="Phone">
             <Input value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
+          </Field>
+          <Field label="Date of birth">
+            <Input
+              type="date"
+              value={f.dateOfBirth}
+              onChange={(e) => setF({ ...f, dateOfBirth: e.target.value })}
+            />
+          </Field>
+          <Field label="Address" className="sm:col-span-2">
+            <Input value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />
+          </Field>
+          <Field label="About" className="sm:col-span-2" hint="A line or two others on your team might see">
+            <Textarea
+              value={f.bio}
+              onChange={(e) => setF({ ...f, bio: e.target.value })}
+              className="min-h-[70px]"
+            />
           </Field>
         </div>
       )}
