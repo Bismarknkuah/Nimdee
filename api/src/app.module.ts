@@ -35,6 +35,7 @@ import { ExportsModule } from './exports/exports.module';
 import { PublicModule } from './public/public.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { DisciplineModule } from './discipline/discipline.module';
+import { ExpensesModule } from './expenses/expenses.module';
 import { EventsModule } from './events/events.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { LibraryModule } from './library/library.module';
@@ -79,6 +80,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     PublicModule,
     SubscriptionsModule,
     DisciplineModule,
+    ExpensesModule,
     EventsModule,
     AssignmentsModule,
     LibraryModule,

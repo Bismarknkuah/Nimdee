@@ -376,21 +376,43 @@ async function main() {
       });
 
       // ── Fees ──
+      // A representative starting set of bill types a Ghanaian basic school actually charges;
+      // Finance Officers can add, rename or deactivate any of these from Fees > Categories.
       const cats = {} as Record<string, string>;
-      for (const n of ['Tuition', 'PTA Dues', 'ICT Levy', 'Boarding'])
+      for (const n of [
+        'Tuition',
+        'Examination Fees',
+        'Feeding Fee',
+        'Bursary',
+        'Classes/Part-time Fees',
+        'Printing Fee',
+        'PTA Dues',
+        'ICT Levy',
+        'Boarding',
+      ])
         cats[n] = (await tx.feeCategory.create({ data: { tenantId: T, name: n } })).id;
       const fee = (level: string, cat: string, amount: number, appliesTo: any = 'ALL') =>
         tx.feeStructure.create({
           data: { tenantId: T, academicYearId: year.id, level, categoryId: cats[cat], amount, appliesTo },
         });
       await fee('PRIMARY', 'Tuition', 900);
+      await fee('PRIMARY', 'Examination Fees', 30);
+      await fee('PRIMARY', 'Feeding Fee', 15);
+      await fee('PRIMARY', 'Classes/Part-time Fees', 20);
+      await fee('PRIMARY', 'Printing Fee', 15);
       await fee('PRIMARY', 'PTA Dues', 50);
       await fee('PRIMARY', 'ICT Levy', 40);
       await fee('PRIMARY', 'Boarding', 1200, 'BOARDING');
       await fee('JHS', 'Tuition', 1200);
+      await fee('JHS', 'Examination Fees', 50);
+      await fee('JHS', 'Feeding Fee', 15);
+      await fee('JHS', 'Classes/Part-time Fees', 25);
+      await fee('JHS', 'Printing Fee', 20);
       await fee('JHS', 'PTA Dues', 60);
       await fee('JHS', 'ICT Levy', 60);
       await fee('JHS', 'Boarding', 1400, 'BOARDING');
+      // Bursary is left with no default structure — schools set an amount only if they charge one; it
+      // otherwise exists so a discretionary bursary/hardship credit can be recorded against it.
 
       // ── Canteen ──
       for (const [name, price, stock] of [

@@ -33,6 +33,7 @@ import {
   UsersRound,
   Utensils,
   Wallet,
+  Receipt,
   WifiOff,
   X,
   Zap,
@@ -45,7 +46,7 @@ import { api } from '@/lib/api';
 import { dashboardFor, useAuth } from '@/lib/auth';
 import { useOffline } from '@/lib/offline';
 import { ago } from '@/lib/format';
-import { Badge, Button, Field, Input, Modal, Spinner, useToast } from '@/components/ui';
+import { Badge, Button, Field, ImageUpload, Input, Modal, Spinner, useToast } from '@/components/ui';
 
 interface NavItem {
   href: string;
@@ -155,6 +156,13 @@ const SCHOOL_NAV: NavGroup[] = [
         label: 'Payments',
         icon: Wallet,
         perms: ['FEES_VIEW', 'PAYMENT_RECORD'],
+        feature: 'FEES',
+      },
+      {
+        href: '/school/expenses',
+        label: 'Expenses',
+        icon: Receipt,
+        perms: ['EXPENSE_VIEW'],
         feature: 'FEES',
       },
       {
@@ -337,12 +345,6 @@ function ProfileModal({
       setBusy(false);
     }
   };
-  const initials = (isPlatform ? f.name : `${f.firstName} ${f.lastName}`)
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((s: string) => s[0]?.toUpperCase())
-    .join('');
   return (
     <Modal
       open
@@ -359,23 +361,9 @@ function ProfileModal({
         </>
       }
     >
-      <div className="mb-4 flex items-center gap-3">
-        {f.avatarUrl ? (
-          <img src={f.avatarUrl} alt="" className="h-14 w-14 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/10 text-lg font-semibold text-brand">
-            {initials || '?'}
-          </div>
-        )}
-        <div className="flex-1">
-          <Field label="Photo URL" hint="Paste a link to an image; leave blank to use your initials">
-            <Input
-              value={f.avatarUrl}
-              onChange={(e) => setF({ ...f, avatarUrl: e.target.value })}
-              placeholder="https://..."
-            />
-          </Field>
-        </div>
+      <div className="mb-4">
+        <ImageUpload value={f.avatarUrl} onChange={(dataUrl) => setF({ ...f, avatarUrl: dataUrl })} />
+        {!f.avatarUrl && <p className="mt-1 text-xs text-slate-400">No photo yet — your initials show instead</p>}
       </div>
       {isPlatform ? (
         <Field label="Name">

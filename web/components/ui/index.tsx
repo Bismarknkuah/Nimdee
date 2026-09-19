@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ImagePlus,
   Info,
   Loader2,
   Search,
@@ -112,6 +113,101 @@ export function Field({
 export const Input = (p: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input {...p} className={clsx('input', p.className)} />
 );
+/**
+ * Picks an image straight from the device (camera roll, file browser) — never a pasted link.
+ * Downscales client-side to keep the stored size sane, then hands back a data: URL via onChange.
+ */
+export function ImageUpload({
+  value,
+  onChange,
+  shape = 'circle',
+  maxDimension = 480,
+}: {
+  value?: string | null;
+  onChange: (dataUrl: string) => void;
+  shape?: 'circle' | 'square';
+  maxDimension?: number;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const inputId = useMemo(() => `img-upload-${Math.random().toString(36).slice(2)}`, []);
+  const handleFile = async (file?: File) => {
+    if (!file) return;
+    setError('');
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError('Image is too large (max 8MB)');
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Could not read the file'));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('Could not read the image'));
+          img.onload = () => {
+            const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const c = canvas.getContext('2d');
+            if (!c) return reject(new Error('Could not process the image'));
+            c.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          };
+          img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+      });
+      onChange(dataUrl);
+    } catch (e: any) {
+      setError(e.message ?? 'Upload failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <label
+        htmlFor={inputId}
+        className={clsx(
+          'group relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden border border-dashed border-slate-300 bg-slate-50 text-slate-400 hover:border-brand hover:text-brand',
+          shape === 'circle' ? 'rounded-full' : 'rounded-md',
+        )}
+      >
+        {value ? (
+          <img src={value} alt="" className="h-full w-full object-cover" />
+        ) : busy ? (
+          <Loader2 size={20} className="animate-spin" />
+        ) : (
+          <ImagePlus size={20} />
+        )}
+        <input
+          id={inputId}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </label>
+      <div>
+        <label htmlFor={inputId} className="cursor-pointer text-sm font-medium text-brand hover:underline">
+          {value ? 'Change photo' : 'Upload from this device'}
+        </label>
+        <p className="text-xs text-slate-400">JPG or PNG, up to 8MB</p>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </div>
+    </div>
+  );
+}
 export const Textarea = (p: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
   <textarea {...p} className={clsx('input min-h-[90px]', p.className)} />
 );

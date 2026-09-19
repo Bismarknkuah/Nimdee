@@ -22,6 +22,14 @@ export class CanteenPlansController {
   @Get('student/:studentId') @RequirePermissions('CANTEEN_VIEW') student(@Param('studentId') id: string) {
     return this.plans.studentPlan(id);
   }
+  @Get('feeding-classes') @RequirePermissions('CANTEEN_VIEW') feedingClasses() {
+    return this.plans.feedingClasses();
+  }
+  @Patch('feeding-classes') @RequirePermissions('CANTEEN_MANAGE') updateFeedingClasses(
+    @Body() dto: { exemptClassIds: string[] },
+  ) {
+    return this.plans.updateFeedingClasses(dto.exemptClassIds);
+  }
   @Post() @RequirePermissions('CANTEEN_MANAGE') create(@Body() dto: CanteenPlanDto) {
     return this.plans.create(dto);
   }

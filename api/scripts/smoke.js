@@ -495,7 +495,7 @@ const today = new Date().toISOString().slice(0, 10);
   });
   const F = r.data.accessToken;
   r = await call('GET', '/fees/structures', { token: F });
-  check('fee structures', r.status === 200 && r.data.length === 8, r.data);
+  check('fee structures', r.status === 200 && r.data.length === 16, r.data);
   r = await call('POST', '/fees/discounts', {
     token: F,
     body: { studentId: p5Students[2].id, name: 'Scholarship', type: 'PERCENT', value: 50, reason: 'Merit' },
@@ -506,14 +506,14 @@ const today = new Date().toISOString().slice(0, 10);
   r = await call('POST', '/fees/invoices/generate', { token: F, body: { termId: term.id } });
   check('regeneration skips existing', r.status === 201 && r.data.created === 0 && r.data.skipped === 33, r.data);
   r = await call('GET', `/fees/invoices?studentId=${p5Students[2].id}`, { token: F });
-  check('discounted invoice (50% off 990 = 495)', r.status === 200 && Number(r.data.items[0].total) === 495, r.data);
+  check('discounted invoice (50% off 1070 = 535)', r.status === 200 && Number(r.data.items[0].total) === 535, r.data);
   r = await call('GET', `/fees/invoices?studentId=${p5Students[0].id}`, { token: F });
   const inv = r.data.items[0];
-  check('boarding student invoice includes boarding line (990+1200)', Number(inv.total) === 2190, inv);
+  check('boarding student invoice includes boarding line (1070+1200)', Number(inv.total) === 2270, inv);
   r = await call('GET', `/fees/invoices/${inv.id}`, { token: F });
   check(
     'invoice detail has 3 installments',
-    r.status === 200 && r.data.installments.length === 3 && r.data.lines.length === 4,
+    r.status === 200 && r.data.installments.length === 3 && r.data.lines.length === 8,
     r.data,
   );
   r = await call('POST', '/fees/payments', {
@@ -544,13 +544,13 @@ const today = new Date().toISOString().slice(0, 10);
   check('receipt PDF rendered', r.status === 200 && r.ct.includes('application/pdf') && r.data.byteLength > 1500, r.ct);
   r = await call('GET', `/fees/students/${p5Students[0].id}/statement`, { token: F });
   check(
-    'statement balance = 2190 - 1000',
-    r.status === 200 && Number(r.data.balance) === 1190 && r.data.ledger.length === 2,
+    'statement balance = 2270 - 1000',
+    r.status === 200 && Number(r.data.balance) === 1270 && r.data.ledger.length === 2,
     r.data,
   );
   r = await call('POST', '/fees/payments', {
     token: F,
-    body: { studentId: p5Students[0].id, invoiceId: inv.id, amount: 1190, method: 'CASH' },
+    body: { studentId: p5Students[0].id, invoiceId: inv.id, amount: 1270, method: 'CASH' },
   });
   check('final payment settles invoice', r.status === 201 && r.data.invoice.status === 'PAID', r.data);
   const payment2 = r.data;
@@ -558,8 +558,8 @@ const today = new Date().toISOString().slice(0, 10);
   check('payment reversal (admin)', r.status === 201 && r.data.status === 'REVERSED', r.data);
   r = await call('GET', `/fees/students/${p5Students[0].id}/statement`, { token: F });
   check(
-    'ledger after reversal balance = 1190',
-    Number(r.data.balance) === 1190 && r.data.invoices[0].status === 'PARTIALLY_PAID',
+    'ledger after reversal balance = 1270',
+    Number(r.data.balance) === 1270 && r.data.invoices[0].status === 'PARTIALLY_PAID',
     r.data.balance,
   );
   r = await call('GET', '/fees/summary', { token: F });

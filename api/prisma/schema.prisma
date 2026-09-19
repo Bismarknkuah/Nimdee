@@ -818,6 +818,37 @@ model Payment {
   @@index([tenantId, studentId])
 }
 
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// A purchase or expenditure recorded by the Headmaster (or whoever EXPENSE_CREATE is granted to) and
+/// approved or rejected by the Finance Officer. The same person never both requests and approves —
+/// EXPENSE_CREATE and EXPENSE_APPROVE are deliberately never granted to the same system role.
+model Expense {
+  id              String        @id @default(uuid())
+  tenantId        String
+  category        String
+  description     String
+  amount          Decimal       @db.Decimal(12, 2)
+  vendor          String?
+  purchasedAt     DateTime
+  receiptUrl      String?
+  status          ExpenseStatus @default(PENDING)
+  requestedById   String
+  approvedById    String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([tenantId, status])
+  @@index([tenantId, purchasedAt])
+}
+
 /// Running balance per student. Positive = student owes the school.
 model StudentAccount {
   id        String   @id @default(uuid())

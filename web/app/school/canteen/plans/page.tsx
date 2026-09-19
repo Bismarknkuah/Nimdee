@@ -154,8 +154,8 @@ function PlanModal({ plan, onClose, onSaved }: { plan: any; onClose: () => void;
 function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void; onDone: () => void }) {
   const toast = useToast();
   const { data: classes } = useApi<any[]>('/academic/classes');
-  const { data: settings } = useApi<any>('/school/settings');
-  const exemptIds: string[] = settings?.canteen?.exemptClassIds ?? [];
+  const { data: feeding } = useApi<any>('/canteen/plans/feeding-classes');
+  const exemptIds: string[] = feeding?.exemptClassIds ?? [];
   const eligibleClasses = (classes ?? []).filter((c: any) => !exemptIds.includes(c.id));
   const [busy, setBusy] = useState(false);
   const [classId, setClassId] = useState('');
@@ -227,20 +227,20 @@ function ExemptClassesCard() {
   const toast = useToast();
   const { can } = useAuth();
   const { data: classes } = useApi<any[]>('/academic/classes');
-  const { data: settings, reload } = useApi<any>('/school/settings');
+  const { data: feeding, reload } = useApi<any>('/canteen/plans/feeding-classes');
   const [selected, setSelected] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    if (settings) setSelected(settings.canteen.exemptClassIds ?? []);
-  }, [settings]);
-  if (!settings || selected === null) return null;
+    if (feeding) setSelected(feeding.exemptClassIds ?? []);
+  }, [feeding]);
+  if (!feeding || selected === null) return null;
   const toggle = (id: string) =>
     setSelected((prev) => (prev!.includes(id) ? prev!.filter((x) => x !== id) : [...prev!, id]));
   const save = async () => {
     setBusy(true);
     try {
-      await api.patch('/school/settings', { canteen: { exemptClassIds: selected } });
-      toast.success('Exempt classes updated');
+      await api.patch('/canteen/plans/feeding-classes', { exemptClassIds: selected });
+      toast.success('Feeding classes updated');
       reload();
     } catch (e: any) {
       toast.error(e.message);
@@ -250,9 +250,9 @@ function ExemptClassesCard() {
   };
   return (
     <Card
-      title="Classes exempt from school feeding"
+      title="Which classes are fed"
       actions={
-        can('SETTINGS_MANAGE') && (
+        can('CANTEEN_MANAGE') && (
           <Button onClick={save} loading={busy}>
             Save
           </Button>
@@ -260,8 +260,9 @@ function ExemptClassesCard() {
       }
     >
       <p className="mb-3 text-sm text-slate-500">
-        Every student pays for school feeding by default. Tick any class that does not take part (for
-        example a class that brings its own food); they won't appear when enrolling a class into a plan.
+        The school feeds every student on every school day by default. Tick any class or form that
+        does not take part (for example JHS at a school that only feeds KG and Primary); they won't
+        appear when enrolling a class into a plan.
       </p>
       <div className="grid gap-1 sm:grid-cols-3">
         {(classes ?? []).map((c: any) => (

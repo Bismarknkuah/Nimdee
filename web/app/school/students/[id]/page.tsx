@@ -84,12 +84,20 @@ export default function StudentDetail() {
             {can('USERS_MANAGE') && !s.user && (
               <Button
                 variant="secondary"
-                onClick={() =>
+                onClick={() => {
+                  const young = s.class?.level === 'KG' || s.class?.level === 'PRIMARY';
+                  if (
+                    young &&
+                    !confirm(
+                      `${s.firstName} is in ${title(s.class?.level)}. A parent can already see everything — results, fees, attendance, assignments — from their own account, so most learners this age don't need a separate login of their own.\n\nOnly go ahead if a parent has specifically asked for ${s.firstName} to have their own login (for example, if ${s.firstName} uses a device to do homework).\n\nCreate a login for ${s.firstName} anyway?`,
+                    )
+                  )
+                    return;
                   act(async () => {
                     const r = await api.post(`/students/${id}/login`);
                     alert(`Student login created.\nEmail: ${r.email}\nTemporary password: ${r.temporaryPassword}`);
-                  }, 'Login created')
-                }
+                  }, 'Login created');
+                }}
               >
                 <KeyRound size={16} /> Create login
               </Button>
@@ -176,6 +184,12 @@ export default function StudentDetail() {
           }
           padded={false}
         >
+          <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-500">
+            A guardian with a portal login can already see everything for {s.firstName} — results, fees,
+            attendance, assignments and more — from their own account. Most students, especially younger
+            ones without a phone of their own, don't need a separate login; give {s.firstName} one only if
+            a guardian specifically asks for it.
+          </p>
           <table className="table">
             <thead>
               <tr>

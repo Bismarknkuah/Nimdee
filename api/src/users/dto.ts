@@ -28,7 +28,7 @@ export class UpdateMyProfileDto {
   @IsOptional() @IsString() @MaxLength(60) lastName?: string;
   @IsOptional() @IsString() @MaxLength(120) name?: string;
   @IsOptional() @IsString() @MaxLength(30) phone?: string;
-  @IsOptional() @IsString() @MaxLength(2048) avatarUrl?: string;
+  @IsOptional() @IsString() @MaxLength(2_500_000) avatarUrl?: string;
 }
 
 export class CreateUserDto {

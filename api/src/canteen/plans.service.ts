@@ -7,6 +7,7 @@ import { FeesService } from '../fees/fees.service';
 import { ctx, requestContext, tid } from '../common/context/request-context';
 import { addDays, money, startOfToday, toDateOnly, zero } from '../common/utils';
 import { allowanceDue, walletCanPay } from './plan-rules';
+import { mergeSettings } from '../common/settings';
 import { CanteenPlanDto, EnrolDto, EnrolmentQueryDto } from './plans.dto';
 
 export interface ActivePlan {
@@ -243,6 +244,31 @@ export class CanteenPlansService {
   }
 
   /** Enrols students (explicit ids or a whole class) on a plan; ends any other active enrolment. */
+  /** Which classes take part in school feeding, and which are exempt (e.g. JHS at a school that only
+   *  feeds KG/Primary). This is the Canteen Manager's call, not a general settings change, so it's a
+   *  narrow read/write of just this one field rather than the full Settings > Rules engine screen. */
+  async feedingClasses() {
+    const settings = await this.tenants.settings(tid());
+    return { exemptClassIds: settings.canteen.exemptClassIds ?? [] };
+  }
+
+  async updateFeedingClasses(exemptClassIds: string[]) {
+    const tenantId = tid();
+    const t = await this.prisma.db.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } });
+    const current: any = mergeSettings(t.settings);
+    const next = { ...current, canteen: { ...current.canteen, exemptClassIds: [...new Set(exemptClassIds)] } };
+    await this.prisma.db.tenant.update({ where: { id: tenantId }, data: { settings: next } });
+    this.tenants.invalidate(tenantId);
+    await this.audit.log({
+      action: 'FEEDING_CLASSES_UPDATED',
+      entity: 'Tenant',
+      entityId: tenantId,
+      before: { exemptClassIds: current.canteen.exemptClassIds ?? [] },
+      after: { exemptClassIds: next.canteen.exemptClassIds },
+    });
+    return { exemptClassIds: next.canteen.exemptClassIds };
+  }
+
   async enrol(planId: string, dto: EnrolDto) {
     const tenantId = tid();
     const plan = await this.prisma.db.canteenPlan.findUnique({ where: { id: planId } });

@@ -23,7 +23,17 @@ export const PERMISSION_GROUPS: Record<string, string[]> = {
   Staff: ['STAFF_VIEW', 'STAFF_MANAGE'],
   Attendance: ['ATTENDANCE_VIEW', 'ATTENDANCE_MARK'],
   Results: ['RESULT_VIEW', 'RESULT_ENTER', 'RESULT_REVIEW', 'RESULT_APPROVE', 'RESULT_PUBLISH'],
-  Finance: ['FEES_VIEW', 'FEES_MANAGE', 'INVOICE_CREATE', 'PAYMENT_RECORD', 'REFUND_APPROVE', 'DISCOUNT_MANAGE'],
+  Finance: [
+    'FEES_VIEW',
+    'FEES_MANAGE',
+    'INVOICE_CREATE',
+    'PAYMENT_RECORD',
+    'REFUND_APPROVE',
+    'DISCOUNT_MANAGE',
+    'EXPENSE_VIEW',
+    'EXPENSE_CREATE',
+    'EXPENSE_APPROVE',
+  ],
   Canteen: ['CANTEEN_VIEW', 'CANTEEN_MANAGE', 'CANTEEN_SELL', 'WALLET_TOPUP'],
   Inventory: ['INVENTORY_VIEW', 'INVENTORY_MANAGE'],
   Communication: ['ANNOUNCEMENT_MANAGE', 'MESSAGES_SEND'],
@@ -81,6 +91,8 @@ const OPERATIONAL_PERMISSIONS = [
   'PAYMENT_RECORD',
   'REFUND_APPROVE',
   'DISCOUNT_MANAGE',
+  'EXPENSE_CREATE',
+  'EXPENSE_APPROVE',
   'CANTEEN_SELL',
   'WALLET_TOPUP',
   'INVENTORY_MANAGE',
@@ -106,9 +118,9 @@ export const SYSTEM_ROLES: Record<string, { description: string; permissions: st
     permissions: [...VIEW_AND_OVERSIGHT_PERMISSIONS, 'SUBSCRIPTION_MANAGE'],
   },
   Headmaster: {
-    description: 'Head of school: oversight of academics, finance and operations',
+    description: 'Head of school: oversight of academics, finance and operations. Records expenses for the Finance Officer to approve — cannot approve their own.',
     permissions: ALL_PERMISSIONS.filter(
-      (p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'SUBSCRIPTION_MANAGE', 'BACKUP_DOWNLOAD'].includes(p),
+      (p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'SUBSCRIPTION_MANAGE', 'BACKUP_DOWNLOAD', 'EXPENSE_APPROVE'].includes(p),
     ),
   },
   'Academic Head': {
@@ -138,7 +150,8 @@ export const SYSTEM_ROLES: Record<string, { description: string; permissions: st
     ],
   },
   Accountant: {
-    description: 'Fees, invoices, payments and financial reports',
+    description:
+      'Finance Officer: fees, invoices, payments, financial reports, and approving or rejecting the expenses the Headmaster records',
     permissions: [
       'STUDENT_VIEW',
       'STAFF_VIEW',
@@ -156,6 +169,8 @@ export const SYSTEM_ROLES: Record<string, { description: string; permissions: st
       'PAYROLL_MANAGE',
       'MESSAGES_SEND',
       'LEAVE_REQUEST',
+      'EXPENSE_VIEW',
+      'EXPENSE_APPROVE',
     ],
   },
   Teacher: { description: 'Attendance, marks and timetable for assigned classes', permissions: TEACHER },

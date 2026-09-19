@@ -15,6 +15,7 @@ import {
   Card,
   Checkbox,
   Field,
+  ImageUpload,
   Input,
   Modal,
   PageHeader,
@@ -153,15 +154,16 @@ function BrandingTab() {
     <div className="grid gap-4 lg:grid-cols-3">
       <Card title="Brand" className="lg:col-span-2">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Logo URL" hint="Square PNG/SVG hosted on your website or a CDN">
-            <Input
-              value={f.logoUrl}
-              onChange={(e) => setF({ ...f, logoUrl: e.target.value })}
-              placeholder="https://…/logo.png"
-            />
+          <Field label="Logo" hint="Square PNG/JPG, uploaded from this device">
+            <ImageUpload value={f.logoUrl} onChange={(dataUrl) => setF({ ...f, logoUrl: dataUrl })} shape="square" />
           </Field>
-          <Field label="Favicon URL">
-            <Input value={f.faviconUrl} onChange={(e) => setF({ ...f, faviconUrl: e.target.value })} />
+          <Field label="Favicon" hint="Small square icon shown in the browser tab">
+            <ImageUpload
+              value={f.faviconUrl}
+              onChange={(dataUrl) => setF({ ...f, faviconUrl: dataUrl })}
+              shape="square"
+              maxDimension={64}
+            />
           </Field>
           <Field label="Primary colour">
             <div className="flex gap-2">
