@@ -10,6 +10,7 @@ import { HealthModule } from '../health/health.module';
 import { TransportModule } from '../transport/transport.module';
 import { LibraryModule } from '../library/library.module';
 import { EventsModule } from '../events/events.module';
+import { MessagingModule } from '../messaging/messaging.module';
 import { PortalController } from './portal.controller';
 import { PortalService } from './portal.service';
 
@@ -26,6 +27,7 @@ import { PortalService } from './portal.service';
     TransportModule,
     LibraryModule,
     EventsModule,
+    MessagingModule,
   ],
   controllers: [PortalController],
   providers: [PortalService],

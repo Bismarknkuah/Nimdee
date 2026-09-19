@@ -141,6 +141,30 @@ export default function ParentDashboard() {
             ) : (
               <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">No published results yet</div>
             )}
+            {c.installments?.[0] && (
+              <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-sm">
+                <span className="text-slate-600">
+                  Next payment due <b>{fmtDate(c.installments[0].dueDate)}</b>
+                </span>
+                <Link
+                  href={`/school/portal/children/${c.id}?tab=fees`}
+                  className={`font-semibold ${c.installments[0].status === 'OVERDUE' ? 'text-red-700' : 'text-brand'}`}
+                >
+                  {money(Number(c.installments[0].due), cur)}
+                </Link>
+              </div>
+            )}
+            {c.canteenPlan && (
+              <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+                Feeding: <b>{c.canteenPlan.name}</b> · {money(c.canteenPlan.price, cur)}/
+                {c.canteenPlan.billingPeriod?.toLowerCase()}
+              </div>
+            )}
+            {c.today?.length > 0 && (
+              <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+                Today: {c.today.map((t: any) => t.subject).join(' · ')}
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 border-t border-slate-100 p-3">
               <Link href={`/school/portal/children/${c.id}`} className="btn-primary">
                 View details
@@ -215,7 +239,7 @@ export default function ParentDashboard() {
           <Card
             title="Today's meal"
             actions={
-              <Link href="/school/canteen/menu" className="text-xs text-brand hover:underline">
+              <Link href="/school/portal/menu" className="text-xs text-brand hover:underline">
                 Full week
               </Link>
             }

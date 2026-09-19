@@ -17,6 +17,7 @@ import { HealthService } from '../health/health.service';
 import { TransportService } from '../transport/transport.service';
 import { LibraryService } from '../library/library.service';
 import { EventsService } from '../events/events.service';
+import { MessagingService } from '../messaging/messaging.service';
 import { SubmitDto } from '../assignments/dto';
 
 /** Parent & student portal: every query is scoped to the caller's own children / own record. */
@@ -38,6 +39,7 @@ export class PortalService {
     private transport: TransportService,
     private library: LibraryService,
     private events: EventsService,
+    private messaging: MessagingService,
   ) {}
 
   private async childIds(): Promise<string[]> {
@@ -114,7 +116,8 @@ export class PortalService {
       where: { id: { in: [...new Set(results.map((r) => r.termId))] } },
       select: { id: true, name: true, startDate: true },
     });
-    const [calendar, installments, walletTx, plans, currentTerm, timetableToday] = await Promise.all([
+    const [calendar, installments, walletTx, plans, currentTerm, timetableToday, assignmentsDueRaw, upcomingEvents, unreadMessages] =
+      await Promise.all([
       db.attendance.findMany({
         where: { studentId: { in: ids }, date: { gte: since } },
         select: { studentId: true, date: true, status: true },
@@ -157,7 +160,41 @@ export class PortalService {
         },
         orderBy: { period: { sequence: 'asc' } },
       }),
+      db.assignmentSubmission.findMany({
+        where: {
+          studentId: { in: ids },
+          status: { in: ['PENDING', 'LATE'] },
+          assignment: { status: 'PUBLISHED', dueAt: { lte: addDays(startOfToday(), 7) } },
+        },
+        include: { assignment: { select: { id: true, title: true, dueAt: true, subject: { select: { name: true } } } } },
+        orderBy: { assignment: { dueAt: 'asc' } },
+        take: 15,
+      }),
+      db.schoolEvent.findMany({
+        where: {
+          startAt: { gte: startOfToday() },
+          OR: [
+            { audienceType: { in: ['ALL', 'PARENTS'] } },
+            { audienceType: 'CLASS', classId: { in: children.map((k) => k.classId).filter(Boolean) as string[] } },
+          ],
+        },
+        orderBy: { startAt: 'asc' },
+        take: 6,
+        select: { id: true, title: true, type: true, startAt: true, allDay: true, location: true },
+      }),
+      this.messaging.unreadCount(),
     ]);
+    const assignmentsDue = assignmentsDueRaw.map((s) => {
+      const student = children.find((k) => k.id === s.studentId);
+      return {
+        id: s.assignment.id,
+        title: s.assignment.title,
+        subject: s.assignment.subject.name,
+        dueAt: s.assignment.dueAt,
+        overdue: s.assignment.dueAt < new Date(),
+        student: { id: s.studentId, firstName: student?.firstName ?? '' },
+      };
+    });
     return {
       school: {
         name: snap.name,
@@ -167,6 +204,9 @@ export class PortalService {
         term: currentTerm ? { id: currentTerm.id, name: currentTerm.name, endDate: currentTerm.endDate } : null,
       },
       unreadNotifications: unread,
+      unreadMessages,
+      assignmentsDue,
+      upcomingEvents,
       announcements,
       children: children.map((k) => {
         const a = attendance.filter((x) => x.studentId === k.id);

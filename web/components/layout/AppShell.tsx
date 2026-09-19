@@ -245,6 +245,7 @@ const PORTAL_NAV: NavGroup[] = [
         feature: 'MESSAGING',
       },
       { href: '/school/events', label: 'Calendar', icon: CalendarDays, feature: 'EVENTS' },
+      { href: '/school/portal/menu', label: 'This week\'s food', icon: Utensils, feature: 'CANTEEN' },
       { href: '/school/portal/notifications', label: 'Notifications', icon: Bell },
     ],
   },
