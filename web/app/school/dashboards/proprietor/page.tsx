@@ -30,6 +30,7 @@ export default function ProprietorDashboard() {
   const { data: enrolment } = useApi('/reports/enrolment');
   const { data: finance } = useApi('/reports/finance');
   const { data: sub } = useApi(can('SUBSCRIPTION_MANAGE') ? '/subscription' : null);
+  const { data: expenseSummary } = useApi<any>(can('EXPENSE_VIEW') ? '/expenses/summary' : null);
   if (loading || !d) return <Spinner />;
 
   const netThisYear = finance ? finance.collectionsByMonth.reduce((a: number, m: any) => a + m.fees + m.wallet, 0) : null;
@@ -232,6 +233,32 @@ export default function ProprietorDashboard() {
         </Card>
       </div>
 
+      {expenseSummary && (
+        <>
+          <SectionTitle>Expenses</SectionTitle>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <KeyStat
+              label="Awaiting approval"
+              value={money(expenseSummary.pending.total, cur)}
+              sub={`${expenseSummary.pending.count} expense(s)`}
+              tone="amber"
+            />
+            <KeyStat
+              label="Approved"
+              value={money(expenseSummary.approved.total, cur)}
+              sub={`${expenseSummary.approved.count} expense(s)`}
+              tone="emerald"
+            />
+            <KeyStat
+              label="Rejected"
+              value={money(expenseSummary.rejected.total, cur)}
+              sub={`${expenseSummary.rejected.count} expense(s)`}
+              tone="red"
+            />
+          </div>
+        </>
+      )}
+
       <SectionTitle>Owner shortcuts</SectionTitle>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Link
@@ -240,6 +267,14 @@ export default function ProprietorDashboard() {
         >
           <ArrowUpRight size={20} className="text-brand" /> Full reports
         </Link>
+        {can('EXPENSE_VIEW') && (
+          <Link
+            href="/school/expenses"
+            className="card flex flex-col items-center gap-2 p-3 text-center text-xs font-medium text-slate-700 hover:border-brand hover:text-brand-dark"
+          >
+            <Banknote size={20} className="text-brand" /> Expenses
+          </Link>
+        )}
         {can('SUBSCRIPTION_MANAGE') && (
           <Link
             href="/school/settings?tab=subscription"

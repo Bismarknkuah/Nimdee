@@ -5,7 +5,7 @@ import { AuditService } from '../audit/audit.service';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
 import { FeesService } from '../fees/fees.service';
 import { ctx, requestContext, tid } from '../common/context/request-context';
-import { addDays, money, startOfToday, toDateOnly, zero } from '../common/utils';
+import { addDays, isoDate, money, startOfToday, toDateOnly, zero } from '../common/utils';
 import { allowanceDue, walletCanPay } from './plan-rules';
 import { mergeSettings } from '../common/settings';
 import { CanteenPlanDto, EnrolDto, EnrolmentQueryDto } from './plans.dto';
@@ -293,6 +293,179 @@ export class CanteenPlansService {
       after: { weeklyMenu: cleaned },
     });
     return { weeklyMenu: cleaned };
+  }
+
+  /** Counts Monday-to-Friday days inclusive of both ends; a simple, honest approximation of "school
+   *  days" since there's no holiday calendar to exclude specific closed dates yet. */
+  private countSchoolDays(from: Date, to: Date): number {
+    let count = 0;
+    const cur = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()));
+    const end = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate()));
+    while (cur <= end) {
+      const day = cur.getUTCDay();
+      if (day !== 0 && day !== 6) count++;
+      cur.setUTCDate(cur.getUTCDate() + 1);
+    }
+    return count;
+  }
+
+  /** The [from, to] window a period type covers around a reference date, clipped to the current term
+   *  so a "termly" or "monthly" charge never reaches into a different term. Periods can be in the
+   *  past (catching up) or the future (paying ahead) within the term — both are legitimate. */
+  private periodRange(
+    periodType: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'TERMLY',
+    referenceDate: Date,
+    term: { startDate: Date; endDate: Date },
+  ) {
+    const clip = (d: Date, lo: Date, hi: Date) => (d < lo ? lo : d > hi ? hi : d);
+    let from: Date;
+    let to: Date;
+    if (periodType === 'DAILY') {
+      from = toDateOnly(referenceDate);
+      to = from;
+    } else if (periodType === 'WEEKLY') {
+      const dow = referenceDate.getUTCDay();
+      const mondayOffset = dow === 0 ? -6 : 1 - dow;
+      from = addDays(toDateOnly(referenceDate), mondayOffset);
+      to = addDays(from, 4);
+    } else if (periodType === 'MONTHLY') {
+      from = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth(), 1));
+      to = new Date(Date.UTC(referenceDate.getUTCFullYear(), referenceDate.getUTCMonth() + 1, 0));
+    } else {
+      from = toDateOnly(term.startDate);
+      to = toDateOnly(term.endDate);
+    }
+    from = clip(from, toDateOnly(term.startDate), toDateOnly(term.endDate));
+    to = clip(to, toDateOnly(term.startDate), toDateOnly(term.endDate));
+    return { from, to };
+  }
+
+  private async currentTerm() {
+    const term = await this.prisma.db.term.findFirst({ where: { isCurrent: true } });
+    if (!term) throw new BadRequestException('No current term is set up for this school year');
+    return term;
+  }
+
+  /** What a feeding charge for this student/plan/period would cost, without recording anything. */
+  async previewFeedingCharge(dto: { studentId: string; planId: string; periodType: string; referenceDate?: string }) {
+    const plan = await this.prisma.db.canteenPlan.findUnique({ where: { id: dto.planId } });
+    if (!plan) throw new NotFoundException('Plan not found');
+    const term = await this.currentTerm();
+    const { from, to } = this.periodRange(dto.periodType as any, toDateOnly(dto.referenceDate ?? startOfToday()), term);
+    const schoolDays = from > to ? 0 : this.countSchoolDays(from, to);
+    const dailyRate = Number(plan.price);
+    const overlap = await this.prisma.db.canteenFeedingCharge.findFirst({
+      where: { studentId: dto.studentId, planId: dto.planId, periodStart: { lte: to }, periodEnd: { gte: from } },
+    });
+    return {
+      from: isoDate(from),
+      to: isoDate(to),
+      schoolDays,
+      dailyRate,
+      amount: money(dailyRate * schoolDays).toNumber(),
+      alreadyCharged: !!overlap,
+      overlapsWith: overlap ? { from: isoDate(overlap.periodStart), to: isoDate(overlap.periodEnd) } : null,
+    };
+  }
+
+  /** Records a feeding payment for a period, billed to Fees or debited from the wallet. */
+  async chargeFeedingPeriod(dto: {
+    studentId: string;
+    planId: string;
+    periodType: string;
+    referenceDate?: string;
+    bill: boolean;
+  }) {
+    const preview = await this.previewFeedingCharge(dto);
+    if (preview.alreadyCharged)
+      throw new ConflictException(
+        `${preview.overlapsWith?.from} to ${preview.overlapsWith?.to} has already been charged for this student`,
+      );
+    if (preview.schoolDays <= 0) throw new BadRequestException('That period has no school days left to charge for');
+    const plan = await this.prisma.db.canteenPlan.findUnique({ where: { id: dto.planId } });
+    if (!plan) throw new NotFoundException('Plan not found');
+    const student = await this.prisma.db.student.findUnique({ where: { id: dto.studentId } });
+    if (!student) throw new NotFoundException('Student not found');
+    const term = await this.currentTerm();
+    const tenantId = tid();
+    const recordedById = ctx().userId;
+    const charge = await this.prisma.tenantTx(async (tx) => {
+      let invoiceId: string | null = null;
+      if (dto.bill) {
+        const inv = await this.fees.createAdhocInvoice(tx, {
+          studentId: dto.studentId,
+          termId: term.id,
+          dueDate: addDays(startOfToday(), 7),
+          notes: `Feeding fee: ${plan.name}`,
+          lines: [
+            {
+              categoryName: 'Feeding Fee',
+              description: `${plan.name} — ${dto.periodType.toLowerCase()} (${preview.from} to ${preview.to}, ${preview.schoolDays} day(s))`,
+              amount: preview.amount,
+            },
+          ],
+        });
+        invoiceId = inv.id;
+      } else {
+        const w = await tx.wallet.upsert({
+          where: { studentId: dto.studentId },
+          update: {},
+          create: { tenantId, studentId: dto.studentId, balance: 0 },
+        });
+        const price = money(preview.amount);
+        const canPay = walletCanPay(Number(w.balance), Number(price), Number(w.creditLimit ?? 0), w.isActive);
+        if (!canPay.ok) throw new BadRequestException(canPay.reason ?? 'Wallet cannot cover this charge');
+        const balanceAfter = money(w.balance).minus(price);
+        await tx.wallet.update({ where: { id: w.id }, data: { balance: balanceAfter } });
+        await tx.walletTransaction.create({
+          data: {
+            tenantId,
+            walletId: w.id,
+            type: 'SUBSCRIPTION',
+            amount: price,
+            balanceAfter,
+            reference: `Feeding fee: ${plan.name} (${preview.from} to ${preview.to})`,
+            byId: recordedById,
+          },
+        });
+      }
+      return tx.canteenFeedingCharge.create({
+        data: {
+          tenantId,
+          studentId: dto.studentId,
+          planId: dto.planId,
+          periodType: dto.periodType as any,
+          periodStart: toDateOnly(preview.from),
+          periodEnd: toDateOnly(preview.to),
+          schoolDays: preview.schoolDays,
+          dailyRate: preview.dailyRate,
+          amount: preview.amount,
+          billedToFees: dto.bill,
+          invoiceId,
+          recordedById,
+        },
+      });
+    });
+    await this.audit.log({
+      action: 'FEEDING_CHARGE_RECORDED',
+      entity: 'CanteenFeedingCharge',
+      entityId: charge.id,
+      after: { studentId: dto.studentId, planId: dto.planId, amount: preview.amount, from: preview.from, to: preview.to },
+    });
+    return { ...charge, amount: Number(charge.amount), dailyRate: Number(charge.dailyRate) };
+  }
+
+  async feedingChargeHistory(studentId?: string) {
+    const charges = await this.prisma.db.canteenFeedingCharge.findMany({
+      where: studentId ? { studentId } : undefined,
+      orderBy: { periodStart: 'desc' },
+      take: 200,
+      include: {
+        student: { select: { id: true, firstName: true, lastName: true, studentId: true } },
+        plan: { select: { id: true, name: true } },
+      },
+    });
+    return charges.map((c) => ({ ...c, amount: Number(c.amount), dailyRate: Number(c.dailyRate) }));
   }
 
   async enrol(planId: string, dto: EnrolDto) {

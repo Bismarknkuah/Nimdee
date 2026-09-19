@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus, Users } from 'lucide-react';
-import { api } from '@/lib/api';
-import { useApi } from '@/lib/hooks';
+import clsx from 'clsx';
+import { Plus, Users, X } from 'lucide-react';
+import { api, qs } from '@/lib/api';
+import { useApi, useDebounce } from '@/lib/hooks';
 import { useAuth } from '@/lib/auth';
 import { money, title } from '@/lib/format';
 import {
@@ -15,6 +16,7 @@ import {
   Input,
   Modal,
   PageHeader,
+  SearchBox,
   Select,
   Textarea,
   useToast,
@@ -158,13 +160,25 @@ function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void;
   const exemptIds: string[] = feeding?.exemptClassIds ?? [];
   const eligibleClasses = (classes ?? []).filter((c: any) => !exemptIds.includes(c.id));
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<'class' | 'students'>('class');
   const [classId, setClassId] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
+  const studentQ = useDebounce(studentSearch);
+  const { data: studentResults } = useApi<any>(
+    studentQ.length >= 2 ? `/students${qs({ search: studentQ, pageSize: 8 })}` : null,
+    [studentQ],
+  );
+  const [pickedStudents, setPickedStudents] = useState<{ id: string; name: string }[]>([]);
   const [bill, setBill] = useState(plan.billToFees ? 'FEES' : 'WALLET');
   const submit = async () => {
-    if (!classId) return toast.error('Choose a class');
+    if (mode === 'class' && !classId) return toast.error('Choose a class');
+    if (mode === 'students' && !pickedStudents.length) return toast.error('Add at least one student');
     setBusy(true);
     try {
-      const r = await api.post(`/canteen/plans/${plan.id}/enrol`, { classId, bill: bill === 'FEES' });
+      const body: any = { bill: bill === 'FEES' };
+      if (mode === 'class') body.classId = classId;
+      else body.studentIds = pickedStudents.map((s) => s.id);
+      const r = await api.post(`/canteen/plans/${plan.id}/enrol`, body);
       toast.success(`${r.enrolled} student(s) enrolled${r.billed ? `, ${r.billed} charged` : ''}`);
       if (r.errors?.length) toast.error(`${r.errors.length} could not be enrolled`);
       onDone();
@@ -178,34 +192,94 @@ function EnrolModal({ plan, onClose, onDone }: { plan: any; onClose: () => void;
     <Modal
       open
       onClose={onClose}
-      title={`Enrol a class into ${plan.name}`}
+      title={`Enrol into ${plan.name}`}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={submit} loading={busy}>
-            Enrol class
+            Enrol
           </Button>
         </>
       }
     >
       <div className="space-y-3">
-        <Field
-          label="Class"
-          hint={
-            exemptIds.length
-              ? "Every active student in this class joins the plan today. Classes exempt from feeding aren't listed."
-              : 'Every active student in this class joins the plan today'
-          }
-        >
-          <Select
-            placeholder="Choose a class"
-            options={eligibleClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${title(c.level)})` }))}
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-          />
-        </Field>
+        <div className="flex gap-2 rounded-lg bg-slate-100 p-1 text-sm">
+          <button
+            className={clsx('flex-1 rounded-md py-1.5 font-medium', mode === 'class' ? 'bg-white shadow-sm' : 'text-slate-500')}
+            onClick={() => setMode('class')}
+          >
+            Whole class
+          </button>
+          <button
+            className={clsx(
+              'flex-1 rounded-md py-1.5 font-medium',
+              mode === 'students' ? 'bg-white shadow-sm' : 'text-slate-500',
+            )}
+            onClick={() => setMode('students')}
+          >
+            Individual student(s)
+          </button>
+        </div>
+        {mode === 'class' ? (
+          <Field
+            label="Class"
+            hint={
+              exemptIds.length
+                ? "Every active student in this class joins the plan today. Classes exempt from feeding aren't listed."
+                : 'Every active student in this class joins the plan today'
+            }
+          >
+            <Select
+              placeholder="Choose a class"
+              options={eligibleClasses.map((c: any) => ({ value: c.id, label: `${c.name} (${title(c.level)})` }))}
+              value={classId}
+              onChange={(e) => setClassId(e.target.value)}
+            />
+          </Field>
+        ) : (
+          <Field label="Students" hint="For a parent who wants only their own child on the plan">
+            {pickedStudents.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {pickedStudents.map((s) => (
+                  <span
+                    key={s.id}
+                    className="flex items-center gap-1 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-medium text-brand-dark"
+                  >
+                    {s.name}
+                    <button onClick={() => setPickedStudents((prev) => prev.filter((p) => p.id !== s.id))}>
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <SearchBox value={studentSearch} onChange={setStudentSearch} placeholder="Type a name or student ID…" />
+            {studentResults?.items?.length > 0 && (
+              <ul className="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200">
+                {studentResults.items
+                  .filter((s: any) => !pickedStudents.some((p) => p.id === s.id))
+                  .map((s: any) => (
+                    <li key={s.id}>
+                      <button
+                        className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50"
+                        onClick={() => {
+                          setPickedStudents((prev) => [...prev, { id: s.id, name: `${s.firstName} ${s.lastName}` }]);
+                          setStudentSearch('');
+                        }}
+                      >
+                        {s.firstName} {s.lastName}{' '}
+                        <span className="text-slate-500">
+                          · {s.studentId} · {s.class?.name ?? 'No class'}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </Field>
+        )}
         {Number(plan.price) > 0 && (
           <Field label="How should this be charged?">
             <Select

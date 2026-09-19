@@ -469,6 +469,7 @@ model Student {
   account               StudentAccount?
   wallet                Wallet?
   canteenPlans          StudentCanteenPlan[]
+  feedingCharges        CanteenFeedingCharge[]
   graduatedAt           DateTime?
   invoices              Invoice[]
   payments              Payment[]
@@ -1134,6 +1135,7 @@ model CanteenPlan {
   updatedAt          DateTime             @updatedAt
   items              CanteenPlanItem[]
   enrolments         StudentCanteenPlan[]
+  feedingCharges     CanteenFeedingCharge[]
 
   @@unique([tenantId, code])
 }
@@ -1169,6 +1171,38 @@ model StudentCanteenPlan {
   updatedAt   DateTime            @updatedAt
 
   @@index([tenantId, studentId, status])
+  @@index([tenantId, planId])
+}
+
+enum FeedingPeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  TERMLY
+}
+
+/// One recorded feeding payment for a specific stretch of school days, at the plan's daily rate.
+/// Prevents double-charging by checking for date overlap with existing charges for the same student
+/// and plan before a new one is recorded.
+model CanteenFeedingCharge {
+  id           String            @id @default(uuid())
+  tenantId     String
+  studentId    String
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  planId       String
+  plan         CanteenPlan       @relation(fields: [planId], references: [id])
+  periodType   FeedingPeriodType
+  periodStart  DateTime          @db.Date
+  periodEnd    DateTime          @db.Date
+  schoolDays   Int
+  dailyRate    Decimal           @db.Decimal(12, 2)
+  amount       Decimal           @db.Decimal(12, 2)
+  billedToFees Boolean           @default(true)
+  invoiceId    String?
+  recordedById String?
+  createdAt    DateTime          @default(now())
+
+  @@index([tenantId, studentId, periodStart])
   @@index([tenantId, planId])
 }
 

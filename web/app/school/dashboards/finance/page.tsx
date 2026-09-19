@@ -1,17 +1,18 @@
 'use client';
 import Link from 'next/link';
-import { AlertTriangle, Banknote, CreditCard, PiggyBank, Receipt } from 'lucide-react';
+import { AlertTriangle, Banknote, ClipboardCheck, CreditCard, PiggyBank, Receipt } from 'lucide-react';
 import { useApi } from '@/lib/hooks';
 import { useAuth } from '@/lib/auth';
 import { fmtDateTime, money, pct, title } from '@/lib/format';
 import { BarSeries, Donut, LineSeries } from '@/components/charts';
-import { Card, KeyStat, PageHeader, SectionTitle, Spinner, StatCard } from '@/components/ui';
+import { Badge, Card, KeyStat, PageHeader, SectionTitle, Spinner, StatCard } from '@/components/ui';
 
 /** Finance dashboard for accountants and bursars. */
 export default function FinanceDashboard() {
-  const { me } = useAuth();
+  const { me, can } = useAuth();
   const { data: d, loading } = useApi('/dashboard/finance');
   const { data: rep } = useApi('/reports/finance');
+  const { data: expenseSummary } = useApi<any>(can('EXPENSE_VIEW') ? '/expenses/summary' : null);
   if (loading || !d) return <Spinner />;
   const cur = me?.tenant?.currency ?? 'GHS';
   return (
@@ -30,6 +31,18 @@ export default function FinanceDashboard() {
           </>
         }
       />
+      {can('EXPENSE_APPROVE') && expenseSummary?.pending.count > 0 && (
+        <Link
+          href="/school/expenses"
+          className="mb-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 hover:bg-amber-100"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium text-amber-800">
+            <ClipboardCheck size={16} />
+            {expenseSummary.pending.count} expense{expenseSummary.pending.count === 1 ? '' : 's'} awaiting your approval
+          </span>
+          <Badge tone="amber">{money(expenseSummary.pending.total, cur)}</Badge>
+        </Link>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Invoiced" value={money(d.invoiced, cur)} icon={<CreditCard size={20} />} />
         <StatCard

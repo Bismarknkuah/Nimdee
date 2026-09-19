@@ -40,10 +40,18 @@ import {
 export default function AdminDashboard() {
   const { me, has, can } = useAuth();
   const { data: d, loading } = useApi('/dashboard/school');
+  const { data: expenseSummary } = useApi<any>(can('EXPENSE_VIEW') ? '/expenses/summary' : null);
   if (loading || !d) return <Spinner />;
   const cur = me?.tenant?.currency ?? 'GHS';
   const att = d.attendanceToday;
   const attention: Array<{ icon: any; text: string; href: string; tone: string }> = [];
+  if (can('EXPENSE_CREATE') && expenseSummary?.rejected.count > 0)
+    attention.push({
+      icon: AlertTriangle,
+      text: `${expenseSummary.rejected.count} recorded expense(s) were rejected — check why`,
+      href: '/school/expenses',
+      tone: 'text-red-600',
+    });
   if (d.counts.pendingAdmissions > 0)
     attention.push({
       icon: UserPlus,

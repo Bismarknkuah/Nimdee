@@ -180,6 +180,13 @@ const SCHOOL_NAV: NavGroup[] = [
         feature: 'CANTEEN',
       },
       {
+        href: '/school/canteen/pay',
+        label: 'Record feeding payment',
+        icon: Wallet,
+        perms: ['CANTEEN_MANAGE'],
+        feature: 'CANTEEN',
+      },
+      {
         href: '/school/canteen/menu',
         label: 'Food timetable',
         icon: CalendarDays,

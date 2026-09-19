@@ -36,6 +36,19 @@ export class CanteenPlansController {
   @Patch('menu') @RequirePermissions('CANTEEN_MANAGE') updateMenu(@Body() dto: { weeklyMenu: Record<string, string> }) {
     return this.plans.updateWeeklyMenu(dto.weeklyMenu);
   }
+  @Post('feeding-charges/preview') @RequirePermissions('CANTEEN_MANAGE') previewFeedingCharge(
+    @Body() dto: { studentId: string; planId: string; periodType: string; referenceDate?: string },
+  ) {
+    return this.plans.previewFeedingCharge(dto);
+  }
+  @Post('feeding-charges') @RequirePermissions('CANTEEN_MANAGE') chargeFeedingPeriod(
+    @Body() dto: { studentId: string; planId: string; periodType: string; referenceDate?: string; bill: boolean },
+  ) {
+    return this.plans.chargeFeedingPeriod(dto);
+  }
+  @Get('feeding-charges') @RequirePermissions('CANTEEN_VIEW') feedingChargeHistory(@Query('studentId') studentId?: string) {
+    return this.plans.feedingChargeHistory(studentId);
+  }
   @Post() @RequirePermissions('CANTEEN_MANAGE') create(@Body() dto: CanteenPlanDto) {
     return this.plans.create(dto);
   }

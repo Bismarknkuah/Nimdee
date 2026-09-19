@@ -214,7 +214,7 @@ export default function LoginPage() {
           aria-hidden="true"
           className="absolute inset-0 h-full w-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/80 via-brand-dark/55 to-brand-dark/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/35 to-slate-900/80" />
         <div className="relative">
           <div className="flex items-center gap-2.5 font-bold">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
@@ -222,10 +222,10 @@ export default function LoginPage() {
             </span>
             <span className="text-lg tracking-tight">Nimdee</span>
           </div>
-          <h2 className="mt-14 max-w-sm text-3xl font-extrabold leading-tight tracking-tight">
+          <h2 className="mt-14 max-w-sm text-3xl font-extrabold leading-tight tracking-tight drop-shadow-sm">
             One platform for your whole school.
           </h2>
-          <p className="mt-4 max-w-sm text-brand-soft/90">
+          <p className="mt-4 max-w-sm text-white/85 drop-shadow-sm">
             Academics, attendance, fees, canteen and a parent portal &mdash; built for KG, Primary and JHS schools,
             day and boarding.
           </p>
@@ -240,7 +240,7 @@ export default function LoginPage() {
             ))}
           </ul>
         </div>
-        <p className="relative text-xs text-brand-soft/70">
+        <p className="relative text-xs text-white/70">
           Built for Ghana&apos;s basic schools &mdash; KG, Primary &amp; JHS, day and boarding.
         </p>
       </div>
