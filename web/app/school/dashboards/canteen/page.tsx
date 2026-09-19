@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Banknote, ShoppingBasket, Users, Wallet } from 'lucide-react';
+import { Banknote, Users, Utensils, Wallet } from 'lucide-react';
 import { useApi } from '@/lib/hooks';
 import { useAuth } from '@/lib/auth';
 import { money } from '@/lib/format';
@@ -20,11 +20,11 @@ export default function CanteenDashboard() {
         subtitle={`Summary for ${d.date}`}
         actions={
           <>
-            <Link href="/school/canteen" className="btn-primary">
-              <ShoppingBasket size={16} /> Open POS
+            <Link href="/school/canteen/checkin" className="btn-primary">
+              <Utensils size={16} /> Meal check-in
             </Link>
-            <Link href="/school/canteen/items" className="btn-secondary">
-              Menu & stock
+            <Link href="/school/canteen/plans" className="btn-secondary">
+              Meal plans
             </Link>
           </>
         }

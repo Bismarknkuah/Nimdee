@@ -21,10 +21,13 @@ import {
 export default function ParentDashboard() {
   const { me, has } = useAuth();
   const { data: d, loading } = useApi('/portal/overview');
+  const { data: menuData } = useApi<any>(has('CANTEEN') ? '/portal/canteen-menu' : null);
   if (loading || !d) return <Spinner />;
   const cur = d.school.currency;
   const totalBalance = d.children.reduce((a: number, c: any) => a + Number(c.balance), 0);
   const overdueHomework = (d.assignmentsDue ?? []).filter((a: any) => a.overdue).length;
+  const todayKey = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][new Date().getDay()];
+  const todaysMeal = menuData?.weeklyMenu?.[todayKey];
   return (
     <div>
       <PageHeader
@@ -206,6 +209,18 @@ export default function ParentDashboard() {
                   ] ?? 'brand',
               }))}
             />
+          </Card>
+        )}
+        {has('CANTEEN') && todaysMeal && (
+          <Card
+            title="Today's meal"
+            actions={
+              <Link href="/school/canteen/menu" className="text-xs text-brand hover:underline">
+                Full week
+              </Link>
+            }
+          >
+            <p className="text-sm text-slate-700">{todaysMeal}</p>
           </Card>
         )}
         <Card title="School announcements" padded={false}>

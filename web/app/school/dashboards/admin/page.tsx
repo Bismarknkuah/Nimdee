@@ -13,7 +13,6 @@ import {
   MessageSquare,
   RefreshCw,
   Scale,
-  ShoppingBasket,
   UserPlus,
   Users,
   Wallet,
@@ -100,13 +99,6 @@ export default function AdminDashboard() {
       text: `${d.sync.openConflicts} sync conflict(s) need a decision`,
       href: '/school/sync',
       tone: 'text-red-600',
-    });
-  if (d.canteen?.lowStock > 0)
-    attention.push({
-      icon: ShoppingBasket,
-      text: `${d.canteen.lowStock} canteen item(s) below minimum stock`,
-      href: '/school/canteen/items',
-      tone: 'text-amber-600',
     });
   if (d.unreadMessages > 0)
     attention.push({
@@ -333,14 +325,6 @@ export default function AdminDashboard() {
               value={d.sync.openConflicts}
               tone={d.sync.openConflicts ? 'red' : 'emerald'}
             />
-            {d.canteen && (
-              <KeyStat
-                label="Canteen today"
-                value={money(d.canteen.revenueToday, cur)}
-                sub={`${d.canteen.salesToday} sales`}
-                tone="emerald"
-              />
-            )}
             <KeyStat
               label="Behaviour"
               value={d.openIncidents}

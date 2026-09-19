@@ -40,76 +40,6 @@ const LEFT_PANEL_POINTS = [
   { icon: Smartphone, text: 'A portal parents actually check' },
 ];
 
-/**
- * Original illustrated classroom scene used as the login panel's background image, in the same
- * spirit as a photo-with-colour-tint hero: a chalkboard lesson, a teacher and students at their
- * desks, rendered as soft light-on-dark silhouettes so the brand-colour overlay reads clearly on
- * top (see the gradient div layered over this in <LoginPage />).
- */
-function ClassroomScene({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice" className={className} aria-hidden="true">
-      <rect width="600" height="800" fill="#1e40af" />
-      <circle cx="480" cy="120" r="70" fill="#ffffff" opacity="0.08" />
-      <circle cx="480" cy="120" r="110" fill="#ffffff" opacity="0.04" />
-      <circle cx="70" cy="620" r="160" fill="#ffffff" opacity="0.05" />
-
-      {/* floating doodles */}
-      <g opacity="0.14" fill="#ffffff">
-        <rect x="470" y="470" width="46" height="34" rx="4" transform="rotate(-8 493 487)" />
-        <rect x="478" y="462" width="46" height="34" rx="4" transform="rotate(6 501 479)" />
-        <rect x="40" y="230" width="8" height="90" rx="4" transform="rotate(35 44 275)" />
-        <path d="M84 195 L96 207 L40 263 L28 265 L30 253 Z" transform="rotate(35 62 230)" />
-        <circle cx="540" cy="330" r="5" />
-        <circle cx="520" cy="300" r="3" />
-        <circle cx="555" cy="360" r="3" />
-      </g>
-
-      {/* chalkboard */}
-      <rect x="150" y="70" width="360" height="230" rx="16" fill="#ffffff" opacity="0.12" />
-      <rect x="168" y="88" width="324" height="194" rx="10" fill="#0f172a" opacity="0.55" />
-      <text x="198" y="160" fill="#ffffff" opacity="0.8" fontSize="30" fontFamily="'Comic Sans MS', ui-rounded, system-ui" transform="rotate(-2 198 160)">
-        KG • Primary • JHS
-      </text>
-      <text x="198" y="205" fill="#ffffff" opacity="0.55" fontSize="20" fontFamily="'Comic Sans MS', ui-rounded, system-ui" transform="rotate(1 198 205)">
-        A B C · 1 2 3 · GES
-      </text>
-      <circle cx="440" cy="240" r="16" fill="none" stroke="#ffffff" strokeWidth="2" opacity="0.5" />
-      <path d="M456 240 L468 240 M440 224 L440 212 M452 228 L460 220" stroke="#ffffff" strokeWidth="2" opacity="0.5" strokeLinecap="round" />
-
-      {/* teacher */}
-      <g opacity="0.92" fill="#f8fafc">
-        <circle cx="112" cy="330" r="26" />
-        <path d="M84 358 L140 358 L150 470 L74 470 Z" />
-        <path d="M132 366 L176 322" stroke="#f8fafc" strokeWidth="15" strokeLinecap="round" fill="none" />
-      </g>
-
-      <rect x="0" y="560" width="600" height="2" fill="#ffffff" opacity="0.12" />
-
-      {/* students at desks */}
-      <g opacity="0.9" fill="#f8fafc">
-        <circle cx="150" cy="600" r="27" />
-        <path d="M126 624 L174 624 L182 690 L118 690 Z" />
-      </g>
-      <rect x="95" y="672" width="115" height="46" rx="6" fill="#ffffff" opacity="0.22" />
-
-      <g opacity="0.9" fill="#f8fafc">
-        <circle cx="330" cy="615" r="30" />
-        <path d="M303 641 L357 641 L366 715 L294 715 Z" />
-      </g>
-      <rect x="270" y="694" width="126" height="50" rx="6" fill="#ffffff" opacity="0.22" />
-
-      <g opacity="0.9" fill="#f8fafc">
-        <circle cx="500" cy="600" r="27" />
-        <path d="M476 624 L524 624 L532 690 L468 690 Z" />
-      </g>
-      <rect x="445" y="672" width="115" height="46" rx="6" fill="#ffffff" opacity="0.22" />
-
-      <rect x="0" y="770" width="600" height="30" fill="#0f172a" opacity="0.18" />
-    </svg>
-  );
-}
-
 function LoginForm() {
   const { login, me, loading, role } = useAuth();
   const router = useRouter();
@@ -278,8 +208,13 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-white">
       <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden p-12 text-white lg:flex">
-        <ClassroomScene className="absolute inset-0 h-full w-full" />
-        <div className="absolute inset-0 bg-gradient-to-br from-brand/90 via-brand/85 to-brand-dark/95" />
+        <img
+          src="/branding/login-hero.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-top"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-dark/80 via-brand-dark/55 to-brand-dark/95" />
         <div className="relative">
           <div className="flex items-center gap-2.5 font-bold">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">

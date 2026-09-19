@@ -27,9 +27,9 @@ import {
   Scale,
   Settings,
   ShieldCheck,
-  ShoppingBasket,
   UserPlus,
   Users,
+  UserCircle,
   UsersRound,
   Utensils,
   Wallet,
@@ -166,13 +166,6 @@ const SCHOOL_NAV: NavGroup[] = [
         feature: 'FEES',
       },
       {
-        href: '/school/canteen',
-        label: 'Canteen',
-        icon: ShoppingBasket,
-        perms: ['CANTEEN_VIEW', 'CANTEEN_SELL'],
-        feature: 'CANTEEN',
-      },
-      {
         href: '/school/canteen/checkin',
         label: 'Meal check-in',
         icon: Utensils,
@@ -184,6 +177,13 @@ const SCHOOL_NAV: NavGroup[] = [
         label: 'Meal plans',
         icon: ClipboardList,
         perms: ['CANTEEN_MANAGE'],
+        feature: 'CANTEEN',
+      },
+      {
+        href: '/school/canteen/menu',
+        label: 'Food timetable',
+        icon: CalendarDays,
+        perms: ['CANTEEN_VIEW', 'CANTEEN_MANAGE'],
         feature: 'CANTEEN',
       },
       { href: '/school/inventory', label: 'Inventory', icon: Package, perms: ['INVENTORY_VIEW'], feature: 'INVENTORY' },
@@ -281,13 +281,6 @@ const QUICK_LINKS: NavItem[] = [
     href: '/school/canteen/checkin',
     label: 'Meal check-in',
     icon: Utensils,
-    perms: ['CANTEEN_SELL'],
-    feature: 'CANTEEN',
-  },
-  {
-    href: '/school/canteen',
-    label: 'Canteen sale',
-    icon: ShoppingBasket,
     perms: ['CANTEEN_SELL'],
     feature: 'CANTEEN',
   },
@@ -392,6 +385,7 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const offline = useOffline();
   const [unread, setUnread] = useState(0);
 
@@ -485,16 +479,15 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
         ))}
       </nav>
       <div className="border-t border-slate-100 p-3">
-        <div className="flex items-center gap-2">
+        <div className="relative">
           <button
-            onClick={() => setProfileOpen(true)}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md p-1 text-left hover:bg-slate-100"
-            title="Edit my profile"
+            onClick={() => setAccountOpen((v) => !v)}
+            className="flex w-full items-center gap-2 rounded-lg p-1.5 text-left hover:bg-slate-100"
           >
             {me.user.avatarUrl ? (
-              <img src={me.user.avatarUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+              <img src={me.user.avatarUrl} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
             ) : (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-xs font-semibold text-brand">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-xs font-semibold text-white shadow-sm">
                 {(me.user.name ?? `${me.user.firstName ?? ''} ${me.user.lastName ?? ''}`)
                   .split(' ')
                   .filter(Boolean)
@@ -509,10 +502,33 @@ export function AppShell({ children, mode }: { children: React.ReactNode; mode: 
               </p>
               <p className="truncate text-xs text-slate-500">{me.roles?.join(', ') ?? me.user.role}</p>
             </div>
+            <ChevronDown size={14} className={clsx('shrink-0 text-slate-400 transition-transform', accountOpen && 'rotate-180')} />
           </button>
-          <button onClick={logout} title="Sign out" className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100">
-            <LogOut size={16} />
-          </button>
+          {accountOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setAccountOpen(false)} />
+              <div className="absolute bottom-full left-0 z-50 mb-2 w-full min-w-[13rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
+                <button
+                  onClick={() => {
+                    setAccountOpen(false);
+                    setProfileOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <UserCircle size={16} className="text-slate-400" />
+                  My profile
+                </button>
+                <div className="h-px bg-slate-100" />
+                <button
+                  onClick={logout}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                >
+                  <LogOut size={16} />
+                  Sign out
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
       {profileOpen && (

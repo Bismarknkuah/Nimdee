@@ -269,6 +269,32 @@ export class CanteenPlansService {
     return { exemptClassIds: next.canteen.exemptClassIds };
   }
 
+  /** The published weekly food timetable. Read by the Canteen Manager to edit and by any staff to
+   *  view; parents/students see the same data through the portal endpoint below. */
+  async weeklyMenu() {
+    const settings = await this.tenants.settings(tid());
+    return { weeklyMenu: settings.canteen.weeklyMenu ?? {} };
+  }
+
+  async updateWeeklyMenu(weeklyMenu: Record<string, string>) {
+    const tenantId = tid();
+    const t = await this.prisma.db.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } });
+    const current: any = mergeSettings(t.settings);
+    const cleaned: Record<string, string> = {};
+    for (const [day, meal] of Object.entries(weeklyMenu)) if (meal && meal.trim()) cleaned[day] = meal.trim();
+    const next = { ...current, canteen: { ...current.canteen, weeklyMenu: cleaned } };
+    await this.prisma.db.tenant.update({ where: { id: tenantId }, data: { settings: next } });
+    this.tenants.invalidate(tenantId);
+    await this.audit.log({
+      action: 'FOOD_MENU_UPDATED',
+      entity: 'Tenant',
+      entityId: tenantId,
+      before: { weeklyMenu: current.canteen.weeklyMenu ?? {} },
+      after: { weeklyMenu: cleaned },
+    });
+    return { weeklyMenu: cleaned };
+  }
+
   async enrol(planId: string, dto: EnrolDto) {
     const tenantId = tid();
     const plan = await this.prisma.db.canteenPlan.findUnique({ where: { id: planId } });

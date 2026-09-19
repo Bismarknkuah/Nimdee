@@ -24,6 +24,10 @@ export class PortalController {
   @Get('overview') overview() {
     return this.portal.overview();
   }
+  @Get('canteen-menu') async canteenMenu() {
+    const settings = await this.tenants.settings(tid());
+    return { weeklyMenu: settings.canteen.weeklyMenu ?? {} };
+  }
   @Get('children/:id') child(@Param('id') id: string) {
     return this.portal.child(id);
   }

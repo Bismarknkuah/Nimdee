@@ -60,6 +60,8 @@ export interface SchoolSettings {
     /** Plan types the school offers to parents in the portal */ selfServicePlans: boolean;
     /** Class IDs that do not take part in school feeding (e.g. a boarding-only or off-site class) */
     exemptClassIds: string[];
+    /** Published weekly food timetable, keyed by day of week; shown to parents in the portal. */
+    weeklyMenu: Partial<Record<'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY', string>>;
   };
   communication: {
     smsSenderId?: string;
@@ -103,7 +105,7 @@ export const DEFAULT_SETTINGS: SchoolSettings = {
     paymentProvider: 'NONE',
   },
   sync: { conflictPolicy: 'LATEST_WINS', attendanceWindowDays: 45 },
-  canteen: { defaultDailyLimit: 0, allowNegativeStock: false, selfServicePlans: true, exemptClassIds: [] },
+  canteen: { defaultDailyLimit: 0, allowNegativeStock: false, selfServicePlans: true, exemptClassIds: [], weeklyMenu: {} },
   communication: { announcementChannels: ['IN_APP'], smsEnabled: true, emailEnabled: true, feeReminderDaysBefore: 3 },
 };
 

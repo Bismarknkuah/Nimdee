@@ -30,6 +30,12 @@ export class CanteenPlansController {
   ) {
     return this.plans.updateFeedingClasses(dto.exemptClassIds);
   }
+  @Get('menu') @RequirePermissions('CANTEEN_VIEW') menu() {
+    return this.plans.weeklyMenu();
+  }
+  @Patch('menu') @RequirePermissions('CANTEEN_MANAGE') updateMenu(@Body() dto: { weeklyMenu: Record<string, string> }) {
+    return this.plans.updateWeeklyMenu(dto.weeklyMenu);
+  }
   @Post() @RequirePermissions('CANTEEN_MANAGE') create(@Body() dto: CanteenPlanDto) {
     return this.plans.create(dto);
   }
