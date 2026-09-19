@@ -13,6 +13,7 @@ import {
   Card,
   Checkbox,
   Field,
+  ImageUpload,
   Input,
   PageHeader,
   Spinner,
@@ -28,6 +29,7 @@ const SECTION_TYPES = [
   'stats',
   'message',
   'gallery',
+  'video',
   'testimonials',
   'news',
   'contact',
@@ -264,18 +266,42 @@ export default function WebsiteBuilder() {
               {s.type === 'stats' && items('items', ['label', 'value'])}
               {s.type === 'testimonials' && items('items', ['name', 'body'])}
               {s.type === 'gallery' && (
-                <Field label="Image URLs (one per line)">
-                  <Textarea
-                    value={(s.props.images ?? []).join('\n')}
-                    onChange={(e) =>
-                      setProp(
-                        'images',
-                        e.target.value
-                          .split('\n')
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      )
-                    }
+                <Field label="Photos" hint="Uploaded straight from this device, not a pasted link">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                    {(s.props.images ?? []).map((src: string, i: number) => (
+                      <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200">
+                        <img src={src} alt="" className="h-full w-full object-cover" />
+                        <button
+                          className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 group-hover:opacity-100"
+                          onClick={() =>
+                            setProp(
+                              'images',
+                              (s.props.images ?? []).filter((_: string, j: number) => j !== i),
+                            )
+                          }
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                    <ImageUpload
+                      value={null}
+                      shape="square"
+                      maxDimension={1200}
+                      onChange={(dataUrl) => setProp('images', [...(s.props.images ?? []), dataUrl])}
+                    />
+                  </div>
+                </Field>
+              )}
+              {s.type === 'video' && (
+                <Field
+                  label="YouTube or Vimeo link"
+                  hint="Paste the video's normal page link — Nimdee embeds it automatically. Video files themselves aren't uploaded; they're far too large to store this way."
+                >
+                  <Input
+                    value={s.props.url ?? ''}
+                    onChange={(e) => setProp('url', e.target.value)}
+                    placeholder="https://www.youtube.com/watch?v=…"
                   />
                 </Field>
               )}
@@ -288,7 +314,22 @@ export default function WebsiteBuilder() {
         </Card>
       </div>
       <Card title="Pages & footer" className="mt-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <Checkbox
+          label="Accepting online applications"
+          checked={cfg.pages?.admissions?.open !== false}
+          onChange={(e) =>
+            setCfg({
+              ...cfg,
+              pages: { ...cfg.pages, admissions: { ...cfg.pages?.admissions, open: e.target.checked } },
+            })
+          }
+        />
+        {cfg.pages?.admissions?.open === false && (
+          <p className="mb-3 mt-1 text-xs text-amber-600">
+            The public apply form is hidden and new applications are turned away while this is off.
+          </p>
+        )}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Field label="Admissions page intro">
             <Textarea
               value={cfg.pages?.admissions?.body ?? ''}

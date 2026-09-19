@@ -1,6 +1,31 @@
 import Link from 'next/link';
 import { fmtDate } from '@/lib/format';
 
+/** Turns a YouTube or Vimeo link (any common format) into its embeddable iframe URL, or null if the
+ *  link isn't recognised — video is embedded from these platforms rather than uploaded, since a raw
+ *  video file is far too large to store the way an image can be. */
+function toEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtube.com')) {
+      const id = u.searchParams.get('v') || u.pathname.split('/').pop();
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (u.hostname === 'youtu.be') {
+      const id = u.pathname.slice(1);
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (u.hostname.includes('vimeo.com')) {
+      const id = u.pathname.split('/').filter(Boolean).pop();
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** Renders a school's public website from its website builder config (server component friendly). */
 export function SchoolSite({
   data,
@@ -141,6 +166,22 @@ export function SchoolSite({
                 </div>
               </section>
             ) : null;
+          case 'video': {
+            const embedSrc = toEmbedUrl(p.url);
+            return embedSrc ? (
+              <section key={s.id} className="mx-auto max-w-4xl px-5 py-14">
+                {p.title && <h2 className="mb-6 text-2xl font-bold text-slate-900">{p.title}</h2>}
+                <div className="relative w-full overflow-hidden rounded-xl pt-[56.25%]">
+                  <iframe
+                    src={embedSrc}
+                    className="absolute inset-0 h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+              </section>
+            ) : null;
+          }
           case 'testimonials':
             return p.items?.length ? (
               <section key={s.id} className="bg-slate-50 py-14">

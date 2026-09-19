@@ -19,6 +19,9 @@ export class AdmissionsService {
     const tenant = await this.prisma.platform.tenant.findUnique({ where: { slug: slug.toLowerCase() } });
     if (!tenant || tenant.status !== 'ACTIVE')
       throw new NotFoundException('School not found or not accepting applications');
+    const admissionsOpen = (tenant.websiteConfig as any)?.pages?.admissions?.open;
+    if (admissionsOpen === false)
+      throw new BadRequestException('This school is not accepting online applications right now');
     return requestContext.run(
       { tenantId: tenant.id, actorType: 'SYSTEM', actorName: `Applicant ${dto.guardianName}` },
       async () => {

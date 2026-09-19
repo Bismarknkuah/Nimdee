@@ -73,6 +73,14 @@ export default function ApplyPage() {
               Your application number is <b>{done.applicationNumber}</b>. Keep it for your records.
             </p>
           </div>
+        ) : site && site.website?.pages?.admissions?.open === false ? (
+          <div className="card mt-6 p-8 text-center">
+            <h2 className="text-xl font-semibold text-slate-900">Not accepting applications right now</h2>
+            <p className="mt-2 text-slate-600">
+              {site.school?.name ?? 'This school'} isn&apos;t taking new online applications at the moment. Please
+              check back later or contact the school directly.
+            </p>
+          </div>
         ) : (
           <form onSubmit={submit} className="card mt-6 space-y-4 p-6">
             <h3 className="font-semibold text-slate-800">Applicant</h3>

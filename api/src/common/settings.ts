@@ -207,6 +207,7 @@ export function defaultWebsiteConfig(schoolName: string) {
       admissions: {
         title: 'Admissions',
         body: 'Apply online using the form below. Our admissions team will contact you.',
+        open: true,
       },
     },
   };
