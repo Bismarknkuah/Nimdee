@@ -118,9 +118,18 @@ export const SYSTEM_ROLES: Record<string, { description: string; permissions: st
     permissions: [...VIEW_AND_OVERSIGHT_PERMISSIONS, 'SUBSCRIPTION_MANAGE'],
   },
   Headmaster: {
-    description: 'Head of school: oversight of academics, finance and operations. Records expenses for the Finance Officer to approve — cannot approve their own.',
+    description:
+      'Head of school: oversight of academics, finance and operations. Records expenses for the Finance Officer to approve — cannot approve their own. Views attendance analytics but does not mark attendance — that stays with the class/form teacher and whoever is teaching a given lesson.',
     permissions: ALL_PERMISSIONS.filter(
-      (p) => !['USERS_MANAGE', 'ROLES_MANAGE', 'SUBSCRIPTION_MANAGE', 'BACKUP_DOWNLOAD', 'EXPENSE_APPROVE'].includes(p),
+      (p) =>
+        ![
+          'USERS_MANAGE',
+          'ROLES_MANAGE',
+          'SUBSCRIPTION_MANAGE',
+          'BACKUP_DOWNLOAD',
+          'EXPENSE_APPROVE',
+          'ATTENDANCE_MARK',
+        ].includes(p),
     ),
   },
   'Academic Head': {

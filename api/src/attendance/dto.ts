@@ -19,3 +19,13 @@ export class MarkAttendanceDto {
   @Type(() => AttendanceRecordDto)
   records: AttendanceRecordDto[];
 }
+
+export class MarkLessonAttendanceDto {
+  @IsString() timetableSlotId: string;
+  @Matches(/^\d{4}-\d{2}-\d{2}$/) date: string;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => AttendanceRecordDto)
+  records: AttendanceRecordDto[];
+}

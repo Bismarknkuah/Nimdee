@@ -76,6 +76,26 @@ export class AcademicController {
   @Delete('classes/:id') @RequirePermissions('ACADEMIC_MANAGE') deleteClass(@Param('id') id: string) {
     return this.academic.deleteClass(id);
   }
+  @Get('staff-responsibilities') @RequirePermissions('ACADEMIC_MANAGE') staffResponsibilities() {
+    return this.academic.staffResponsibilities();
+  }
+  @Get('houses') @RequirePermissions('ACADEMIC_MANAGE') houses() {
+    return this.academic.houses();
+  }
+  @Post('houses') @RequirePermissions('ACADEMIC_MANAGE') createHouse(
+    @Body() dto: { name: string; color?: string; houseMasterId?: string },
+  ) {
+    return this.academic.createHouse(dto);
+  }
+  @Patch('houses/:id') @RequirePermissions('ACADEMIC_MANAGE') updateHouse(
+    @Param('id') id: string,
+    @Body() dto: { name?: string; color?: string; houseMasterId?: string | null },
+  ) {
+    return this.academic.updateHouse(id, dto);
+  }
+  @Delete('houses/:id') @RequirePermissions('ACADEMIC_MANAGE') deleteHouse(@Param('id') id: string) {
+    return this.academic.deleteHouse(id);
+  }
   @Put('classes/:id/subjects') @RequirePermissions('ACADEMIC_MANAGE') setSubjects(
     @Param('id') id: string,
     @Body() dto: SetClassSubjectsDto,

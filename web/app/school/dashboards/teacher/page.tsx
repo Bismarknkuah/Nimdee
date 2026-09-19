@@ -1,27 +1,123 @@
 'use client';
 import Link from 'next/link';
-import { CheckCircle2, ClipboardCheck, ClipboardList, Clock, FileBarChart, MessageSquare, Scale } from 'lucide-react';
+import { useState } from 'react';
+import {
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  FileBarChart,
+  MessageSquare,
+  Scale,
+} from 'lucide-react';
+import { api } from '@/lib/api';
 import { useApi } from '@/lib/hooks';
 import { useAuth } from '@/lib/auth';
 import { fmtDate, fmtDateTime, title } from '@/lib/format';
 import {
   Badge,
+  Button,
   Card,
   EmptyState,
   KeyStat,
+  Modal,
   PageHeader,
   ProgressBar,
   SectionTitle,
   Spinner,
   StatCard,
   Timeline,
+  useToast,
 } from '@/components/ui';
+
+const STATUSES = ['PRESENT', 'ABSENT', 'LATE', 'EXCUSED', 'SICK'];
+const STATUS_CLASS: Record<string, string> = {
+  PRESENT: 'bg-emerald-600 text-white',
+  ABSENT: 'bg-red-600 text-white',
+  LATE: 'bg-amber-500 text-white',
+  EXCUSED: 'bg-sky-600 text-white',
+  SICK: 'bg-violet-600 text-white',
+};
+
+/** Marks attendance for one specific lesson (a timetable slot today) — separate from the class
+ *  teacher's daily homeroom attendance elsewhere on this page. */
+function LessonAttendanceModal({ slotId, onClose, onDone }: { slotId: string; onClose: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, loading, reload } = useApi<any>(`/attendance/lessons/${slotId}/roster?date=${today}`, [slotId]);
+  const [statuses, setStatuses] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const current = (studentId: string) => statuses[studentId] ?? data?.students.find((s: any) => s.id === studentId)?.status ?? 'PRESENT';
+  const submit = async () => {
+    if (!data) return;
+    setBusy(true);
+    try {
+      const records = data.students.map((s: any) => ({ studentId: s.id, status: current(s.id) }));
+      await api.post('/attendance/lessons/mark', { timetableSlotId: slotId, date: today, records });
+      toast.success('Lesson attendance saved');
+      onDone();
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={data ? `${data.slot.subject.name} — ${data.slot.class.name}` : 'Lesson attendance'}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={submit} loading={busy}>
+            Save attendance
+          </Button>
+        </>
+      }
+    >
+      {loading || !data ? (
+        <Spinner />
+      ) : (
+        <div className="max-h-[60vh] space-y-1 overflow-y-auto">
+          {data.students.map((s: any) => (
+            <div key={s.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 p-2">
+              <p className="text-sm font-medium text-slate-800">
+                {s.firstName} {s.lastName}
+              </p>
+              <div className="flex gap-1">
+                {STATUSES.map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatuses({ ...statuses, [s.id]: st })}
+                    className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                      current(s.id) === st ? STATUS_CLASS[st] : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    }`}
+                  >
+                    {st.slice(0, 3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
 
 /** Teacher dashboard: classes, lessons, attendance, homework, results, behaviour and messages. */
 export default function TeacherDashboard() {
   const { me, has, can } = useAuth();
   const { data: d, loading } = useApi('/dashboard/teacher');
   const { data: msg } = useApi(has('MESSAGING') ? '/messages/unread-count' : null);
+  const { data: myLessons, reload: reloadLessons } = useApi<any[]>(
+    can('ATTENDANCE_MARK') ? '/attendance/my-lessons-today' : null,
+  );
+  const [markingSlot, setMarkingSlot] = useState<string | null>(null);
   if (loading || !d) return <Spinner />;
   const unmarked = d.classTeacherOf.filter((c: any) => !c.attendanceMarkedToday);
   const toGrade = (d.assignmentsDue ?? []).reduce((n: number, a: any) => n + a.toGrade, 0);
@@ -107,6 +203,36 @@ export default function TeacherDashboard() {
       )}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
+        {myLessons && myLessons.length > 0 && (
+          <Card title="Today's lessons" padded={false} className="lg:col-span-3">
+            <p className="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">
+              Attendance for each lesson is separate from daily homeroom attendance above.
+            </p>
+            <ul className="divide-y divide-slate-100">
+              {myLessons.map((l: any) => (
+                <li key={l.id} className="flex items-center justify-between px-4 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {l.period.name} · {l.subject.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {l.class.name} ({title(l.class.level)}) · {l.period.startTime}–{l.period.endTime}
+                    </p>
+                  </div>
+                  {l.marked ? (
+                    <span className="flex items-center gap-1 text-sm text-emerald-700">
+                      <CheckCircle2 size={16} /> Marked
+                    </span>
+                  ) : (
+                    <Button variant="secondary" onClick={() => setMarkingSlot(l.id)}>
+                      Take attendance
+                    </Button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
         <Card title="My classes" padded={false} className="lg:col-span-2">
           {d.classTeacherOf.length || d.teaching.length ? (
             <table className="table">
@@ -358,6 +484,13 @@ export default function TeacherDashboard() {
           </Link>
         ))}
       </div>
+      {markingSlot && (
+        <LessonAttendanceModal
+          slotId={markingSlot}
+          onClose={() => setMarkingSlot(null)}
+          onDone={reloadLessons}
+        />
+      )}
     </div>
   );
 }

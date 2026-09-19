@@ -201,6 +201,57 @@ export class AcademicService {
     await this.audit.log({ action: 'CLASS_DELETED', entity: 'SchoolClass', entityId: id });
     return { ok: true };
   }
+
+  // ─────────────────────────── Houses & house masters ───────────────────────────
+  async houses() {
+    return this.prisma.db.house.findMany({
+      orderBy: { name: 'asc' },
+      include: { houseMaster: { select: { id: true, firstName: true, lastName: true } } },
+    });
+  }
+  async createHouse(dto: { name: string; color?: string; houseMasterId?: string }) {
+    const h = await this.prisma.db.house.create({
+      data: { tenantId: tid(), name: dto.name.trim(), color: dto.color, houseMasterId: dto.houseMasterId || null },
+    });
+    await this.audit.log({ action: 'HOUSE_CREATED', entity: 'House', entityId: h.id, after: dto });
+    return h;
+  }
+  async updateHouse(id: string, dto: { name?: string; color?: string; houseMasterId?: string | null }) {
+    const h = await this.prisma.db.house.update({
+      where: { id },
+      data: {
+        name: dto.name?.trim(),
+        color: dto.color,
+        houseMasterId: dto.houseMasterId === undefined ? undefined : dto.houseMasterId || null,
+      },
+    });
+    await this.audit.log({ action: 'HOUSE_UPDATED', entity: 'House', entityId: id, after: dto });
+    return h;
+  }
+  async deleteHouse(id: string) {
+    await this.prisma.db.house.delete({ where: { id } });
+    await this.audit.log({ action: 'HOUSE_DELETED', entity: 'House', entityId: id });
+    return { ok: true };
+  }
+
+  /** Every staff responsibility a Headmaster assigns beyond a normal teaching load: Form Master (per
+   *  class) and House Master (per house), in one place rather than scattered across separate screens. */
+  async staffResponsibilities() {
+    const [classes, houses] = await Promise.all([
+      this.prisma.db.schoolClass.findMany({
+        orderBy: [{ level: 'asc' }, { name: 'asc' }],
+        select: {
+          id: true,
+          name: true,
+          level: true,
+          classTeacherId: true,
+          classTeacher: { select: { id: true, firstName: true, lastName: true } },
+        },
+      }),
+      this.houses(),
+    ]);
+    return { classes, houses };
+  }
   async setClassSubjects(classId: string, dto: SetClassSubjectsDto) {
     const cls = await this.prisma.db.schoolClass.findUnique({ where: { id: classId } });
     if (!cls) throw new NotFoundException('Class not found');

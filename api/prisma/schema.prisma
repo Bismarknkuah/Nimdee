@@ -343,6 +343,22 @@ model SchoolClass {
   @@unique([tenantId, name])
 }
 
+/// A school "house" (common in Ghanaian schools for inter-house sports/competitions), with a staff
+/// member designated as House Master/Mistress — one of the "additional tasks" a Headmaster assigns
+/// beyond a teacher's normal subject load, alongside Form Master (SchoolClass.classTeacherId above).
+model House {
+  id            String   @id @default(uuid())
+  tenantId      String
+  name          String
+  color         String?
+  houseMasterId String?
+  houseMaster   Staff?   @relation(fields: [houseMasterId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, name])
+}
+
 model Subject {
   id          String          @id @default(uuid())
   tenantId    String
@@ -419,6 +435,7 @@ model Staff {
   updatedAt      DateTime        @updatedAt
   classSubjects  ClassSubject[]
   classTeacherOf SchoolClass[]   @relation("ClassTeacher")
+  houseMasterOf  House[]
   slots          TimetableSlot[]
 
   leaveRequests LeaveRequest[]
@@ -473,6 +490,7 @@ model Student {
   wallet                Wallet?
   canteenPlans          StudentCanteenPlan[]
   feedingCharges        CanteenFeedingCharge[]
+  lessonAttendances     LessonAttendance[]
   graduatedAt           DateTime?
   invoices              Invoice[]
   payments              Payment[]
@@ -584,6 +602,29 @@ model Attendance {
 
   @@unique([tenantId, studentId, date])
   @@index([tenantId, classId, date])
+}
+
+/// Attendance for one specific lesson (a timetable slot on a given date), separate from the daily
+/// homeroom record above. Whichever teacher is scheduled to teach that period marks it — the form
+/// master keeps daily attendance, but this is what "did the student attend Mrs X's 10am Maths class"
+/// actually is. tenantId + studentId + timetableSlotId + date is unique so re-marking the same lesson
+/// updates it rather than duplicating.
+model LessonAttendance {
+  id              String           @id @default(uuid())
+  tenantId        String
+  studentId       String
+  student         Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  timetableSlotId String
+  slot            TimetableSlot    @relation(fields: [timetableSlotId], references: [id], onDelete: Cascade)
+  date            DateTime         @db.Date
+  status          AttendanceStatus
+  note            String?
+  markedById      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([tenantId, studentId, timetableSlotId, date])
+  @@index([tenantId, timetableSlotId, date])
 }
 
 model Device {
@@ -996,6 +1037,7 @@ model TimetableSlot {
   dayOfWeek Int
   periodId  String
   period    Period      @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  lessonAttendances LessonAttendance[]
 
   @@unique([classId, dayOfWeek, periodId])
   @@index([tenantId, teacherId, dayOfWeek])

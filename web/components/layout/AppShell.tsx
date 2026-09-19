@@ -95,6 +95,13 @@ const SCHOOL_NAV: NavGroup[] = [
         feature: 'ATTENDANCE',
       },
       {
+        href: '/school/attendance/lessons',
+        label: 'My lessons today',
+        icon: ClipboardCheck,
+        perms: ['ATTENDANCE_MARK'],
+        feature: 'ATTENDANCE',
+      },
+      {
         href: '/school/results',
         label: 'Results & exams',
         icon: FileBarChart,

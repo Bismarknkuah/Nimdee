@@ -41,6 +41,7 @@ export default function AdminDashboard() {
   const { me, has, can } = useAuth();
   const { data: d, loading } = useApi('/dashboard/school');
   const { data: expenseSummary } = useApi<any>(can('EXPENSE_VIEW') ? '/expenses/summary' : null);
+  const { data: lessonCompletion } = useApi<any>(has('TIMETABLE') ? '/attendance/lessons/completion-today' : null);
   if (loading || !d) return <Spinner />;
   const cur = me?.tenant?.currency ?? 'GHS';
   const att = d.attendanceToday;
@@ -282,6 +283,43 @@ export default function AdminDashboard() {
           )}
         </Card>
       </div>
+      {lessonCompletion && lessonCompletion.totalLessons > 0 && (
+        <Card
+          title="Lesson attendance today"
+          className="mt-4"
+          padded={false}
+          actions={
+            <span className="text-xs text-slate-500">
+              {lessonCompletion.taken}/{lessonCompletion.totalLessons} lessons taken
+            </span>
+          }
+        >
+          {lessonCompletion.pending.length ? (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Class</th>
+                  <th>Subject</th>
+                  <th>Teacher</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lessonCompletion.pending.map((l: any) => (
+                  <tr key={l.id}>
+                    <td>{l.period.name}</td>
+                    <td>{l.class.name}</td>
+                    <td>{l.subject.name}</td>
+                    <td>{l.teacher ? `${l.teacher.firstName} ${l.teacher.lastName}` : 'Unassigned'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="p-4 text-sm text-emerald-700">Every lesson today has had attendance taken.</p>
+          )}
+        </Card>
+      )}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
         <Card

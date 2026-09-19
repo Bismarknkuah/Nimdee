@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { TenantCacheService } from '../tenants/tenant-cache.service';
@@ -7,7 +7,7 @@ import { ProvidersService } from '../communications/providers.service';
 import { templates } from '../communications/templates';
 import { ctx, tid } from '../common/context/request-context';
 import { addDays, isoDate, startOfToday, toDateOnly, toJson } from '../common/utils';
-import { ATTENDANCE_STATUSES, AttendanceRecordDto, MarkAttendanceDto } from './dto';
+import { ATTENDANCE_STATUSES, AttendanceRecordDto, MarkAttendanceDto, MarkLessonAttendanceDto } from './dto';
 
 export type ConflictPolicy = 'LATEST_WINS' | 'SERVER_WINS' | 'MANUAL';
 export interface ApplyOptions {
@@ -146,6 +146,146 @@ export class AttendanceService {
         dto.records.filter((r) => r.status === 'ABSENT').map((r) => r.studentId),
       ).catch(() => undefined);
     return result;
+  }
+
+  /** Today's day of school-week in this app's convention (1 = Monday ... 7 = Sunday), unlike
+   *  JavaScript's own Date#getDay (0 = Sunday ... 6 = Saturday). */
+  private todayDayOfWeek(): number {
+    const d = new Date().getDay();
+    return d === 0 ? 7 : d;
+  }
+
+  /** Every lesson scheduled today for the current teacher, with whether it's already been marked —
+   *  "any teacher who comes in to teach has to take attendance for their lesson" in practice: this is
+   *  the list they work through, one lesson at a time, as the school day goes on. */
+  async myLessonsToday() {
+    const c = ctx();
+    if (!c.staffId) throw new BadRequestException('No staff profile linked to your account');
+    const dayOfWeek = this.todayDayOfWeek();
+    const today = isoDate(startOfToday());
+    const slots = await this.prisma.db.timetableSlot.findMany({
+      where: { teacherId: c.staffId, dayOfWeek },
+      orderBy: { period: { sequence: 'asc' } },
+      include: {
+        class: { select: { id: true, name: true, level: true } },
+        subject: { select: { id: true, name: true } },
+        period: { select: { id: true, name: true, startTime: true, endTime: true } },
+      },
+    });
+    const marks = await this.prisma.db.lessonAttendance.findMany({
+      where: { timetableSlotId: { in: slots.map((s) => s.id) }, date: toDateOnly(today) },
+      select: { timetableSlotId: true },
+    });
+    const markedSlotIds = new Set(marks.map((m) => m.timetableSlotId));
+    return slots.map((s) => ({
+      id: s.id,
+      class: s.class,
+      subject: s.subject,
+      period: s.period,
+      marked: markedSlotIds.has(s.id),
+    }));
+  }
+
+  private async assertLessonAccess(slot: { classId: string; teacherId: string | null }) {
+    const c = ctx();
+    if (c.permissions?.includes('*') || c.permissions?.includes('ACADEMIC_MANAGE')) return;
+    if (c.staffId && slot.teacherId === c.staffId) return;
+    if (c.staffId) {
+      const isFormMaster = await this.prisma.db.schoolClass.findFirst({
+        where: { id: slot.classId, classTeacherId: c.staffId },
+        select: { id: true },
+      });
+      if (isFormMaster) return;
+    }
+    throw new ForbiddenException('You are not the teacher for this lesson');
+  }
+
+  /** The class roster for one specific lesson, with any attendance already marked for it today. */
+  async lessonRoster(timetableSlotId: string, date: string) {
+    const slot = await this.prisma.db.timetableSlot.findUnique({
+      where: { id: timetableSlotId },
+      include: {
+        class: { select: { id: true, name: true, level: true } },
+        subject: { select: { id: true, name: true } },
+        period: { select: { name: true, startTime: true, endTime: true } },
+      },
+    });
+    if (!slot) throw new NotFoundException('Lesson not found');
+    await this.assertLessonAccess(slot);
+    const [students, marks] = await Promise.all([
+      this.prisma.db.student.findMany({
+        where: { classId: slot.classId, status: 'ACTIVE' },
+        orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+        select: { id: true, studentId: true, firstName: true, lastName: true, photoUrl: true },
+      }),
+      this.prisma.db.lessonAttendance.findMany({
+        where: { timetableSlotId, date: toDateOnly(date) },
+        select: { studentId: true, status: true, note: true },
+      }),
+    ]);
+    const byStudent = new Map(marks.map((m) => [m.studentId, m]));
+    return {
+      slot: { id: slot.id, class: slot.class, subject: slot.subject, period: slot.period },
+      students: students.map((s) => ({
+        ...s,
+        status: byStudent.get(s.id)?.status ?? null,
+        note: byStudent.get(s.id)?.note ?? null,
+      })),
+    };
+  }
+
+  /** Marks (or re-marks) attendance for one specific lesson. Kept separate from the daily homeroom
+   *  Attendance table entirely — a student can be PRESENT for the day but marked ABSENT from one
+   *  specific lesson, and the two are tracked independently on purpose. */
+  async markLesson(dto: MarkLessonAttendanceDto) {
+    const slot = await this.prisma.db.timetableSlot.findUnique({ where: { id: dto.timetableSlotId } });
+    if (!slot) throw new NotFoundException('Lesson not found');
+    await this.assertLessonAccess(slot);
+    const validIds = new Set(
+      (
+        await this.prisma.db.student.findMany({
+          where: { classId: slot.classId, status: 'ACTIVE' },
+          select: { id: true },
+        })
+      ).map((s) => s.id),
+    );
+    const markedById = ctx().userId;
+    let applied = 0;
+    const invalid: string[] = [];
+    for (const r of dto.records) {
+      if (!validIds.has(r.studentId)) {
+        invalid.push(r.studentId);
+        continue;
+      }
+      await this.prisma.db.lessonAttendance.upsert({
+        where: {
+          tenantId_studentId_timetableSlotId_date: {
+            tenantId: tid(),
+            studentId: r.studentId,
+            timetableSlotId: dto.timetableSlotId,
+            date: toDateOnly(dto.date),
+          },
+        },
+        create: {
+          tenantId: tid(),
+          studentId: r.studentId,
+          timetableSlotId: dto.timetableSlotId,
+          date: toDateOnly(dto.date),
+          status: r.status,
+          note: r.note,
+          markedById,
+        },
+        update: { status: r.status, note: r.note, markedById },
+      });
+      applied++;
+    }
+    await this.audit.log({
+      action: 'LESSON_ATTENDANCE_MARKED',
+      entity: 'TimetableSlot',
+      entityId: dto.timetableSlotId,
+      after: { date: dto.date, applied, invalid },
+    });
+    return { applied, invalid };
   }
 
   /** Parents of absent students get an in-app notification (and SMS when the school enables it). */
@@ -309,6 +449,45 @@ export class AttendanceService {
       ...totals,
       rate: marked ? Math.round(((totals.PRESENT + totals.LATE) / marked) * 1000) / 10 : 0,
       classes: byClass,
+    };
+  }
+
+  /** Headmaster-facing oversight: every lesson scheduled today across the whole school, and whether
+   *  the teacher actually took attendance for it — "any teacher who comes in to teach has to take
+   *  attendance for their lesson" is only meaningful if someone can see who didn't. */
+  async lessonCompletionToday() {
+    const dayOfWeek = this.todayDayOfWeek();
+    const today = startOfToday();
+    const slots = await this.prisma.db.timetableSlot.findMany({
+      where: { dayOfWeek },
+      orderBy: [{ period: { sequence: 'asc' } }, { class: { name: 'asc' } }],
+      include: {
+        class: { select: { id: true, name: true, level: true } },
+        subject: { select: { id: true, name: true } },
+        teacher: { select: { id: true, firstName: true, lastName: true } },
+        period: { select: { name: true, startTime: true, endTime: true } },
+      },
+    });
+    const marks = await this.prisma.db.lessonAttendance.findMany({
+      where: { timetableSlotId: { in: slots.map((s) => s.id) }, date: today },
+      select: { timetableSlotId: true },
+      distinct: ['timetableSlotId'],
+    });
+    const markedSlotIds = new Set(marks.map((m) => m.timetableSlotId));
+    const lessons = slots.map((s) => ({
+      id: s.id,
+      class: s.class,
+      subject: s.subject,
+      teacher: s.teacher,
+      period: s.period,
+      marked: markedSlotIds.has(s.id),
+    }));
+    return {
+      date: isoDate(today),
+      totalLessons: lessons.length,
+      taken: lessons.filter((l) => l.marked).length,
+      pending: lessons.filter((l) => !l.marked),
+      lessons,
     };
   }
 }
